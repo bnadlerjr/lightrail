@@ -1,18 +1,5 @@
 defmodule Lightrail do
   @moduledoc """
-  Documentation for `Lightrail`.
+  Architecture experiments for RailwayIPC.
   """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Lightrail.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 end

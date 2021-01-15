@@ -13,8 +13,7 @@ defmodule Lightrail.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Lightrail.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
