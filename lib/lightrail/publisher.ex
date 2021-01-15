@@ -3,14 +3,14 @@ defmodule Lightrail.Publisher do
   Public interface for a publisher.
 
   TODO:
+
   * docstrings for functions since this is a public API
+  * anything to cleanup for callback type signature? (rename to init)
+  * put example implementation in moduledoc
 
   """
 
-  @callback my_init() :: [
-    connection: String.t(),
-    exchange: String.t()
-  ]
+  @callback my_init() :: [connection: String.t(), exchange: String.t()]
 
   def start_link(module, options \\ []) do
     GenServer.start_link(Lightrail.Publisher.Server, %{module: module}, options)

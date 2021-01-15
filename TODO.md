@@ -1,6 +1,9 @@
 # TODO
 
-* setup telemetry for publisher
 * fix TODOs in Publisher
+* fix TODOs in Publisher.Server
+* fix TODOs in Consumer
+* fix TODOs in Consumer.Server
 * fix TODOs in MessageBus.RabbitMQ
-* basic working version of a consumer
+* figure out how supervisors work; develop consumer strategy
+* figure out how protobuf encoding / decoding fits in

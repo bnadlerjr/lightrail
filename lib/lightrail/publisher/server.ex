@@ -2,6 +2,11 @@ defmodule Lightrail.Publisher.Server do
   @moduledoc """
   GenServer implementation for publishers.
 
+  TODO:
+
+  * is Process.flag(:trap_exit, true) needed? what does that do?
+  * setup telemetry
+
   """
 
   require Logger
@@ -37,7 +42,11 @@ defmodule Lightrail.Publisher.Server do
   end
 
   def terminate({{:shutdown, {:server_initiated_close, error_code, reason}}, _}, %{module: module}) do
-    Logger.error("[#{module}]: Terminating publisher, error_code: #{inspect(error_code)}, reason: #{inspect(reason)}")
+    Logger.error(
+      "[#{module}]: Terminating publisher, error_code: #{inspect(error_code)}, reason: #{
+        inspect(reason)
+      }"
+    )
   end
 
   def terminate(reason, %{module: module}) do
