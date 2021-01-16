@@ -1,0 +1,15 @@
+// TODO: put this in a helper script
+//
+// To generate protobuf implementations for all protobufs in this file:
+// 1) mix escript.install hex protobuf
+// 2) protoc --plugin=$HOME/.mix/escripts/protoc-gen-elixir --proto_path=test/support/protobufs --elixir_out=test/support/protobufs test/support/protobufs/*.proto
+syntax = "proto3";
+
+package test.support;
+
+message Message {
+  string user_uuid = 1;
+  string correlation_id = 2;
+  string uuid = 3;
+  map<string, string> context = 4;
+}
