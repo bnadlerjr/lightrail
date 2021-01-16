@@ -15,7 +15,7 @@ defmodule Lightrail.Publisher.Server do
   @message_bus Application.compile_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
 
   def init(%{module: module} = initial_state) do
-    config = apply(module, :my_init, [])
+    config = apply(module, :init, [])
     state = Map.merge(initial_state, %{config: config})
     {:ok, state, {:continue, :init}}
   end

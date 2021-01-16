@@ -23,7 +23,7 @@ defmodule ExamplePublisher do
   end
 
   @impl Lightrail.Publisher
-  def my_init() do
+  def init() do
     [
       exchange: "lightrail_example_exchange",
       connection: "amqp://guest:guest@localhost:5672"
