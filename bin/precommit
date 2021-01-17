@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+mix do clean, compile
+mix test
+mix credo
+mix format --check-formatted
