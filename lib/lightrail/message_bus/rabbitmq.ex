@@ -14,7 +14,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     other functions signatures in this module; something like:
     `def publish(%{exchange: exchange, channel: channel}, message, routing_key \\ "") do`
 
-  * cleanup function needs a better name (close?, teardown_publisher?); need
+  * cleanup function needs a better name (close?, teardown?); need
     to see how consumer functions will fit in as well
 
   * What should the publish function return? Should it wrap the results
@@ -61,8 +61,9 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, channel} = Channel.open(connection)
     :ok = Basic.qos(channel, prefetch_count: 5)
 
+    # If I add `durable: true` to the call below I get
     # PRECONDITION_FAILED - inequivalent arg 'durable' for queue -- why?
-    {:ok, _} = Queue.declare(channel, config[:queue]) #, durable: true)
+    {:ok, _} = Queue.declare(channel, config[:queue])
 
     :ok = Exchange.declare(channel, config[:exchange], :fanout, durable: true)
     :ok = Queue.bind(channel, config[:queue], config[:exchange])
