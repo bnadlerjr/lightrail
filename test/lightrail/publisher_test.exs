@@ -1,55 +1,47 @@
 defmodule Lightrail.PublisherTest do
-  use ExUnit.Case, async: true
+  # Note that we need to use async: false since tests interact
+  # with external Rabbit exhcanges, queues, etc.
+  use ExUnit.Case, async: false
+  use Test.Support.RabbitCase
 
-  alias Lightrail.Publisher
   alias Test.Support.Message
+  alias Test.Support.Publisher
 
-  defmodule Subject do
-    @behaviour Lightrail.Publisher
-
-    def start_link() do
-      Lightrail.Publisher.start_link(__MODULE__, name: __MODULE__)
-    end
-
-    @impl Lightrail.Publisher
-    def init() do
-      [
-        exchange: "lightrail_example_exchange",
-        connection: "amqp://guest:guest@localhost:5672"
-      ]
-    end
+  setup_all do
+    {:ok, rmq_connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
+    on_exit(fn -> rmq_close_connection(rmq_connection) end)
+    %{rmq_connection: rmq_connection}
   end
 
-  describe "#start_link" do
+  describe "initialization" do
     test "starts a new publisher" do
-      {:ok, pid} = Publisher.start_link(Subject)
-      assert Process.alive?(pid)
-    end
+      {:ok, pid} = start_supervised(%{id: Publisher, start: {Publisher, :start_link, []}})
 
-    test "supports registering a publisher name" do
-      {:ok, pid} = Publisher.start_link(Subject, name: Subject)
-      assert Process.whereis(Subject) == pid
+      assert Process.alive?(pid)
     end
   end
 
   describe "#publish" do
-    setup do
-      {:ok, server_pid} = Subject.start_link()
-      {:ok, server: server_pid}
+    setup context do
+      start_supervised!(%{id: Publisher, start: {Publisher, :start_link, []}})
+
+      on_exit(fn ->
+        rmq_purge_queue(context.rmq_connection, "lightrail:test:events")
+      end)
     end
 
-    test "successfully publish a message", %{server: pid} do
+    test "successfully publish a message" do
       proto = Message.new(uuid: "abc123")
-      assert :ok == Publisher.publish(pid, proto)
+      assert :ok == Publisher.publish_message(proto)
     end
 
-    test "error handling when protobuf can't be encoded", %{server: pid} do
+    test "error handling when protobuf can't be encoded" do
       expected = {
         :error,
         "An error occurred while attempting to publish a message. Argument Error: Valid Protobuf required"
       }
 
-      assert expected == Publisher.publish(pid, "not a protobuf")
+      assert expected == Publisher.publish_message("not a protobuf")
     end
   end
 end

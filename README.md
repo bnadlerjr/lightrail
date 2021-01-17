@@ -20,6 +20,7 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 [ ] RPC support
 [ ] message bus behaviour?
 [ ] setup telemetry for publisher genserver
+[ ] replace all hard-coded rabbitmq connection strings in tests
 [x] fix TODOs in Publisher
 [x] how should protobuf encoding work?
 [x] fix TODOs in Consumer
