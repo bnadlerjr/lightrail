@@ -8,13 +8,14 @@ defmodule Lightrail.Consumer.Server do
     does it do?
   * consider default timeouts for server & messages
   * setup telemetry
-  * research how Elixir Tasks might work w/ processing messages
   * are all needed GenServer handlers present?
 
   """
 
   require Logger
   use GenServer
+
+  alias Lightrail.Message
 
   @message_bus Application.compile_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
 
@@ -45,13 +46,22 @@ defmodule Lightrail.Consumer.Server do
   end
 
   def handle_info({:basic_deliver, payload, attributes}, %{module: module} = state) do
-    apply(module, :handle_message, [payload])
-    @message_bus.ack(state, attributes)
+    case Message.consume(payload, module) do
+      :error ->
+        @message_bus.reject(state, attributes)
+
+      _ ->
+        @message_bus.ack(state, attributes)
+    end
+
     {:noreply, state}
   rescue
     reason ->
       full_error = {reason, __STACKTRACE__}
-      apply(module, :handle_error, [payload, full_error])
+
+      Logger.error("[#{module}]: Unhandled exception while consuming message.
+        #{inspect(full_error)}")
+
       @message_bus.reject(state, attributes)
       {:noreply, :error}
   end
@@ -66,7 +76,9 @@ defmodule Lightrail.Consumer.Server do
   end
 
   def terminate({{:shutdown, {:server_initiated_close, error_code, reason}}, _}, %{module: module}) do
-    Logger.error("[#{module}]: Terminating consumer, error_code: #{inspect(error_code)}, reason: #{inspect(reason)}")
+    Logger.error("[#{module}]: Terminating consumer, 
+        error_code: #{inspect(error_code)},
+        reason: #{inspect(reason)}")
   end
 
   def terminate(reason, %{module: module}) do

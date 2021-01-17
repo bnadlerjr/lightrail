@@ -19,9 +19,4 @@ defmodule Test.Support.Consumer do
   def handle_message(message) do
     IO.puts("Handled message: #{inspect(message)}")
   end
-
-  @impl Lightrail.Consumer
-  def handle_error(message, reason) do
-    IO.puts("Message error: #{reason} (#{inspect(message)})")
-  end
 end
