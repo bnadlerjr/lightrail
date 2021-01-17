@@ -20,12 +20,14 @@ defmodule Test.Support.Message do
           user_uuid: String.t(),
           correlation_id: String.t(),
           uuid: String.t(),
-          context: %{String.t() => String.t()}
+          context: %{String.t() => String.t()},
+          info: String.t()
         }
-  defstruct [:user_uuid, :correlation_id, :uuid, :context]
+  defstruct [:user_uuid, :correlation_id, :uuid, :context, :info]
 
   field :user_uuid, 1, type: :string
   field :correlation_id, 2, type: :string
   field :uuid, 3, type: :string
   field :context, 4, repeated: true, type: Test.Support.Message.ContextEntry, map: true
+  field :info, 5, type: :string
 end

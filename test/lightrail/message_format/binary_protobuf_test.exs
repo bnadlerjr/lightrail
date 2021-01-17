@@ -38,7 +38,8 @@ defmodule Lightrail.MessageFormat.BinaryProtobufTest do
           context: %{},
           correlation_id: "",
           user_uuid: "",
-          uuid: "abc123"
+          uuid: "abc123",
+          info: ""
         }
       }
 
