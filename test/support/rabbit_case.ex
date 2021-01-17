@@ -52,6 +52,28 @@ defmodule Test.Support.RabbitCase do
         :exit, _ ->
           :ok
       end
+
+      @doc """
+      Publish a message. Expects message to be already encoded.
+
+      """
+      def rmq_publish_message(connection, exchange, message, routing_key \\ "") do
+        {:ok, channel} = AMQP.Channel.open(connection)
+        AMQP.Exchange.declare(channel, exchange, :fanout, durable: true)
+        AMQP.Basic.publish(channel, exchange, routing_key, message)
+        AMQP.Channel.close(channel)
+      end
+
+      @doc """
+      Get the number of messages in the given queue.
+
+      """
+      def rmq_queue_count(connection, queue) do
+        {:ok, channel} = AMQP.Channel.open(connection)
+        {:ok, %{message_count: count}} = AMQP.Queue.declare(channel, queue, passive: true)
+        AMQP.Channel.close(channel)
+        count
+      end
     end
   end
 end

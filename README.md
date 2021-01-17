@@ -16,7 +16,7 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 [ ] message persistence for consumed messages
 [ ] figure out how auto-generated docs work
 [ ] generate UUID's for message if they're not provided
-[ ] commands (both publishing & consuming); how should they work? when should they be used?
+[ ] command messages (both publishing & consuming); how should they work? when should they be used?
 [ ] RPC support
 [ ] message bus behaviour?
 [ ] setup telemetry for publisher genserver
