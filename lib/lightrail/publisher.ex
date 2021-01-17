@@ -37,7 +37,7 @@ defmodule Lightrail.Publisher do
 
   """
 
-  alias Lightrail.MessageFormat.BinaryProtobuf
+  alias Lightrail.Message
 
   @doc """
   Used to provide publisher configuration.
@@ -109,7 +109,7 @@ defmodule Lightrail.Publisher do
   """
   @spec publish(pid, struct) :: :ok | {:error, term}
   def publish(pid, protobuf) do
-    case BinaryProtobuf.encode(protobuf) do
+    case Message.prepare_for_publishing(protobuf) do
       {:ok, message} ->
         GenServer.call(pid, {:publish, message})
 
