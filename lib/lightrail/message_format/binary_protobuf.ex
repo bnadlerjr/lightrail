@@ -19,18 +19,6 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
   wanting to be compatable with the Ruby version since Ruby classes use
   colon notation. -BN
 
-  ## TODO
-  * what's the proper convention/formatting for error tuples?
-
-  * I've seen code examples where stacktraces are added to error
-    tuples using `__STACKTRACE__`; is that useful here?
-
-  * consider splitting this out into two modules, one for encoding
-    and the other for decoding
-
-  * be more explicit about what errors we're rescuing when decoding
-    the protobuf
-
   """
 
   @doc """
@@ -170,6 +158,7 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
 
     {:ok, decoded_message}
   rescue
+    # What's the specific error we should rescue here?
     _ -> {:error, "Cannot decode protobuf"}
   end
 
