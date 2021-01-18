@@ -28,28 +28,25 @@ defmodule Lightrail.ConsumerTest do
     @impl Lightrail.Consumer
     def handle_message(message) do
       case message.info do
-        "this should succeed" ->
-          :ok
-
-        _ ->
-          :error
+        "this should be acked" -> :ok
+        "this should be rejected" -> :error
+        _ -> raise "boom"
       end
     end
   end
 
-  setup_all do
-    {:ok, rmq_connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
-    on_exit(fn -> rmq_close_connection(rmq_connection) end)
-    %{rmq_connection: rmq_connection}
-  end
+  setup do
+    {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
+    purge = fn -> rmq_purge_queue(connection, "lightrail_example_queue") end
 
-  setup context do
-    purge = fn ->
-      rmq_purge_queue(context.rmq_connection, "lightrail_example_queue")
+    exit_fn = fn ->
+      rmq_close_connection(connection)
+      purge.()
     end
 
-    on_exit(purge)
+    on_exit(exit_fn)
     purge.()
+    %{rmq_connection: connection}
   end
 
   test "starting a new consumer" do
@@ -57,14 +54,19 @@ defmodule Lightrail.ConsumerTest do
     assert Process.alive?(pid)
   end
 
-  test "consuming a message", %{rmq_connection: connection} do
+  test "acknowledging a message", %{rmq_connection: connection} do
+    # Make sure the queue is empty
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+
     # Publish a message
-    msg = Proto.new(info: "this should succeed")
+    msg = Proto.new(info: "this should be acked")
     {:ok, encoded} = Message.prepare_for_publishing(msg)
     rmq_publish_message(connection, "lightrail_example_exchange", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(_2_seconds = 2000, fn ->
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
       assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
     end)
 
@@ -72,8 +74,58 @@ defmodule Lightrail.ConsumerTest do
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer processed the message
-    Helpers.wait_for_passing(_2_seconds = 2000, fn ->
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
       assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+  end
+
+  test "rejecting a message", %{rmq_connection: connection} do
+    # Make sure the queue is empty
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+
+    # Publish a message
+    msg = Proto.new(info: "this should be rejected")
+    {:ok, encoded} = Message.prepare_for_publishing(msg)
+    rmq_publish_message(connection, "lightrail_example_exchange", encoded)
+
+    # Make sure it arrived in the queue
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+
+    # Start the consumer
+    start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
+
+    # Assert the consumer rejected the message
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+  end
+
+  test "error handling", %{rmq_connection: connection} do
+    # Make sure the queue is empty
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+
+    # Publish a message
+    msg = Proto.new(info: "this should blow up")
+    {:ok, encoded} = Message.prepare_for_publishing(msg)
+    rmq_publish_message(connection, "lightrail_example_exchange", encoded)
+
+    # Make sure it arrived in the queue
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    end)
+
+    # Start the consumer
+    start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
+
+    # Assert the consumer rejected the message
+    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
+      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
     end)
   end
 
