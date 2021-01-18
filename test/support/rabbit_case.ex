@@ -68,11 +68,16 @@ defmodule Test.Support.RabbitCase do
       Get the number of messages in the given queue.
 
       """
-      def rmq_queue_count(connection, queue) do
-        {:ok, channel} = AMQP.Channel.open(connection)
-        {:ok, %{message_count: count}} = AMQP.Queue.declare(channel, queue, passive: true)
-        AMQP.Channel.close(channel)
-        count
+      def rmq_queue_count(queue) do
+        %{messages: message_count} = get_queue_info(queue)
+        message_count
+      end
+
+      defp get_queue_info(queue_name) do
+        url = "http://guest:guest@localhost:15672/api/queues"
+        {:ok, {a, b, resp}} = :httpc.request(String.to_charlist(url))
+        {:ok, results} = Jason.decode(resp, keys: :atoms)
+        Enum.find(results, fn q -> queue_name == q.name end)
       end
     end
   end

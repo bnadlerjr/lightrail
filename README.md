@@ -4,7 +4,7 @@ The purpose of the project is two-fold. The main reason is for me (Bob) to learn
 
 ## Installation / Development
 
-This project is _not_ intended to be published to Hex. Install by cloning this repo and running the `bin/setup` script. A `precommit` helper script is available that will compile, test and lint code.
+This project is _not_ intended to be published to Hex. Install by cloning this repo and running the `bin/setup` script. A `bin/precommit` helper script is available that will compile, test and lint code.
 
 ## Notes
 
@@ -19,6 +19,9 @@ Originally I had a few tests that exercised the publisher and consumer GenServer
 * The only tests worth writing directly for the GenServers are around publishing a message and consuming one -- these tests can be done at a higher level instead.
 
 * I researched some open source projects and blogs posts to see how others deal with these types of tests. Opinions vary, but I found quite a few that advocate for this approach. It is also the approach they recommend in the "Testing a GenServer" chapter of the book "Testing Elixir".
+
+### Unit Tests vs. RabbitMQ Tests
+All RabbitMQ tests are tagged (`@tag :rabbit`) so that they can be run separately. They are slower than the regular untagged unit tests since they need to assert that messages have been published, queues are empty, etc. By default, running `mix test` will exclude these slow RabbitMQ tests. They can be ran using the `mix test --only rabbit` command or by using the `/bin/precommit` script. The `bin/precommit` script will run them as a last step after the other tests, credo, etc. CI will always run the RabbitMQ tests as well.
 
 ## TODO
 This is a non-exhaustive list of things in no particular order that I'd like to implement, think about, or try:

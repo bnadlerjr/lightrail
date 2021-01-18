@@ -9,6 +9,8 @@ defmodule Lightrail.ConsumerTest do
   alias Test.Support.Helpers
   alias Test.Support.Message, as: Proto
 
+  @timeout _up_to_thirty_seconds = 30_000
+
   defmodule Subject do
     @behaviour Lightrail.Consumer
 
@@ -40,8 +42,8 @@ defmodule Lightrail.ConsumerTest do
     purge = fn -> rmq_purge_queue(connection, "lightrail_example_queue") end
 
     exit_fn = fn ->
-      rmq_close_connection(connection)
       purge.()
+      rmq_close_connection(connection)
     end
 
     on_exit(exit_fn)
@@ -54,10 +56,11 @@ defmodule Lightrail.ConsumerTest do
     assert Process.alive?(pid)
   end
 
+  @tag :rabbit
   test "acknowledging a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 0 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Publish a message
@@ -66,23 +69,24 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail_example_exchange", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 1 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Start the consumer
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer processed the message
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 0 == rmq_queue_count("lightrail_example_queue")
     end)
   end
 
+  @tag :rabbit
   test "rejecting a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 0 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Publish a message
@@ -91,23 +95,24 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail_example_exchange", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 1 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Start the consumer
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer rejected the message
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 1 == rmq_queue_count("lightrail_example_queue")
     end)
   end
 
+  @tag :rabbit
   test "error handling", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 0 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 0 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Publish a message
@@ -116,16 +121,16 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail_example_exchange", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 1 == rmq_queue_count("lightrail_example_queue")
     end)
 
     # Start the consumer
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer rejected the message
-    Helpers.wait_for_passing(_up_to_2_seconds = 2000, fn ->
-      assert 1 == rmq_queue_count(connection, "lightrail_example_queue")
+    Helpers.wait_for_passing(@timeout, fn ->
+      assert 1 == rmq_queue_count("lightrail_example_queue")
     end)
   end
 
