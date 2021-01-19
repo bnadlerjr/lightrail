@@ -41,7 +41,42 @@ defmodule Test.Support.RabbitCase do
       end
 
       @doc """
-      Purges all message fromthe given queue.
+      Delete the specified exchange and all bindings to it.
+
+      """
+      def rmq_delete_exchange(connection, exchange) do
+        {:ok, channel} = AMQP.Channel.open(connection)
+        AMQP.Exchange.delete(channel, exchange)
+        AMQP.Channel.close(channel)
+      end
+
+      @doc """
+      Creates an exchange, a queue, and binds them. The exchange may or may
+      not already exist; if it does a new one won't be created. This will
+      throw an error if the queue already exists, however (maybe? double
+      check that part about the queue is true).
+
+      """
+      def rmq_create_and_bind_queue(connection, queue, exchange) do
+        {:ok, channel} = AMQP.Channel.open(connection)
+        AMQP.Exchange.declare(channel, exchange, :fanout, durable: true)
+        AMQP.Queue.declare(channel, queue)
+        AMQP.Queue.bind(channel, queue, exchange)
+        AMQP.Channel.close(channel)
+      end
+
+      @doc """
+      Delete the specified queue.
+
+      """
+      def rmq_delete_queue(connection, queue) do
+        {:ok, channel} = AMQP.Channel.open(connection)
+        AMQP.Queue.delete(channel, queue)
+        AMQP.Channel.close(channel)
+      end
+
+      @doc """
+      Purges all message from the given queue.
 
       """
       def rmq_purge_queue(connection, queue) do

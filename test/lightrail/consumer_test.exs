@@ -21,8 +21,8 @@ defmodule Lightrail.ConsumerTest do
     @impl Lightrail.Consumer
     def init() do
       [
-        exchange: "lightrail_example_exchange",
-        queue: "lightrail_example_queue",
+        exchange: "lightrail:test",
+        queue: "lightrail:test:events",
         connection: "amqp://guest:guest@localhost:5672"
       ]
     end
@@ -37,18 +37,33 @@ defmodule Lightrail.ConsumerTest do
     end
   end
 
-  setup do
+  setup_all do
     {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
-    purge = fn -> rmq_purge_queue(connection, "lightrail_example_queue") end
+
+    # Publishers don't know about queues, only exchanges. If we send a
+    # message to an exchange that doesn't have a queue bound to it, the
+    # message will be lost. In production, this isn't an issue since
+    # consumers are started first and they create the exchange / queue
+    # binding. These tests, however, publish messages _before_ the consumer
+    # is started. We need to setup the exchange / queue binding ourselves
+    # so that the published messages aren't lost.
+    rmq_create_and_bind_queue(connection, "lightrail:test:events", "lightrail:test")
 
     exit_fn = fn ->
-      purge.()
+      rmq_delete_queue(connection, "lightrail:test:events")
+      rmq_delete_exchange(connection, "lightrail:test")
       rmq_close_connection(connection)
     end
 
     on_exit(exit_fn)
-    purge.()
     %{rmq_connection: connection}
+  end
+
+  setup context do
+    exit_fn = fn ->
+      rmq_purge_queue(context.rmq_connection, "lightrail:test:events")
+    end
+    on_exit(exit_fn)
   end
 
   test "starting a new consumer" do
@@ -60,17 +75,17 @@ defmodule Lightrail.ConsumerTest do
   test "acknowledging a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 0 == rmq_queue_count("lightrail_example_queue")
+      assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Publish a message
     msg = Proto.new(info: "this should be acked")
     {:ok, encoded} = Message.prepare_for_publishing(msg)
-    rmq_publish_message(connection, "lightrail_example_exchange", encoded)
+    rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 1 == rmq_queue_count("lightrail_example_queue")
+      assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Start the consumer
@@ -78,7 +93,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Assert the consumer processed the message
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 0 == rmq_queue_count("lightrail_example_queue")
+      assert 0 == rmq_queue_count("lightrail:test:events")
     end)
   end
 
@@ -86,17 +101,17 @@ defmodule Lightrail.ConsumerTest do
   test "rejecting a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 0 == rmq_queue_count("lightrail_example_queue")
+      assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Publish a message
     msg = Proto.new(info: "this should be rejected")
     {:ok, encoded} = Message.prepare_for_publishing(msg)
-    rmq_publish_message(connection, "lightrail_example_exchange", encoded)
+    rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 1 == rmq_queue_count("lightrail_example_queue")
+      assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Start the consumer
@@ -104,7 +119,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Assert the consumer rejected the message
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 1 == rmq_queue_count("lightrail_example_queue")
+      assert 1 == rmq_queue_count("lightrail:test:events")
     end)
   end
 
@@ -112,17 +127,17 @@ defmodule Lightrail.ConsumerTest do
   test "error handling", %{rmq_connection: connection} do
     # Make sure the queue is empty
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 0 == rmq_queue_count("lightrail_example_queue")
+      assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Publish a message
     msg = Proto.new(info: "this should blow up")
     {:ok, encoded} = Message.prepare_for_publishing(msg)
-    rmq_publish_message(connection, "lightrail_example_exchange", encoded)
+    rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 1 == rmq_queue_count("lightrail_example_queue")
+      assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
     # Start the consumer
@@ -130,7 +145,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Assert the consumer rejected the message
     Helpers.wait_for_passing(@timeout, fn ->
-      assert 1 == rmq_queue_count("lightrail_example_queue")
+      assert 1 == rmq_queue_count("lightrail:test:events")
     end)
   end
 

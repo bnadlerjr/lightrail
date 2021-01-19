@@ -12,15 +12,32 @@ defmodule Lightrail.PublisherTest do
 
   setup_all do
     {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
+
+    # Publishers don't know about queues, only exchanges. If we send a
+    # message to an exchange that doesn't have a queue bound to it, the
+    # message will be lost. In production, this isn't an issue since
+    # consumers will take care of the binding. However, here we have to
+    # setup the queue ourselves since no consumer is set up otherwise the
+    # test message will be lost.
+    rmq_create_and_bind_queue(connection, "lightrail:test:events", "lightrail:test")
+
     start_supervised!(%{id: Publisher, start: {Publisher, :start_link, []}})
 
     exit_fn = fn ->
-      rmq_purge_queue(connection, "lightrail:test:events")
+      rmq_delete_queue(connection, "lightrail:test:events")
+      rmq_delete_exchange(connection, "lightrail:test")
       rmq_close_connection(connection)
     end
 
     on_exit(exit_fn)
-    %{rmq_connection: connection}
+    %{connection: connection}
+  end
+
+  setup context do
+    exit_fn = fn ->
+      rmq_purge_queue(context.connection, "lightrail:test:events")
+    end
+    on_exit(exit_fn)
   end
 
   describe "#publish" do
