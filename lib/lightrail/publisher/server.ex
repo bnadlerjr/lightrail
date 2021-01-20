@@ -23,8 +23,8 @@ defmodule Lightrail.Publisher.Server do
 
   @doc false
   @impl GenServer
-  def handle_continue(:init, %{module: module, config: config}) do
-    {:ok, state} = @message_bus.setup_publisher(%{module: module, config: config})
+  def handle_continue(:init, state) do
+    {:ok, state} = @message_bus.setup_publisher(state)
     {:noreply, state}
   end
 
@@ -37,9 +37,9 @@ defmodule Lightrail.Publisher.Server do
 
   @doc false
   @impl GenServer
-  def handle_info({:DOWN, _ref, :process, _pid, reason}, %{module: module, config: config}) do
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, %{module: module} = state) do
     Logger.info("[#{module}]: RabbitMQ connection is down! Reason: #{inspect(reason)}")
-    {:ok, state} = @message_bus.setup_publisher(%{module: module, config: config})
+    {:ok, state} = @message_bus.setup_publisher(state)
     {:noreply, state}
   end
 
