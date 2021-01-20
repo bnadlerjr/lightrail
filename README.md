@@ -23,6 +23,18 @@ Originally I had a few tests that exercised the publisher and consumer GenServer
 ### Unit Tests vs. RabbitMQ Tests
 All RabbitMQ tests are tagged (`@tag :rabbit`) so that they can be run separately. They are slower than the regular untagged unit tests since they need to assert that messages have been published, queues are empty, etc. By default, running `mix test` will exclude these slow RabbitMQ tests. They can be ran using the `mix test --only rabbit` command or by using the `/bin/precommit` script. The `bin/precommit` script will run them as a last step after the other tests, credo, etc. CI will always run the RabbitMQ tests as well.
 
+### Logs Output During Test Runs
+Originally I had set the log level for the test environment to `:critical` to prevent logs from polluting the test output. This was a mistake. Several errors were occurring that were being hidden, so I set the log level to `:warning`.
+
+There are currently two tests in the `Lightrail.MessageBus.RabbitmqTest` module in the "setting up a consumer" block that are emitting error log messages. AFAICT these errors aren't harming anything, they're do to the way the tests are setup. I couldn't figure out a way to silence them; will revisit at a later date. For reference, the messages look like this:
+
+```
+[error] gen_server <0.532.0> terminated with reason: unexpected_delivery_and_no_default_consumer
+[error] CRASH REPORT Process <0.532.0> with 0 neighbours exited with reason: unexpected_delivery_and_no_default_consumer in gen_server2:terminate/3 line 1183
+[error] Supervisor {<0.531.0>,amqp_channel_sup} had child gen_consumer started with amqp_gen_consumer:start_link(amqp_selective_consumer, [], {<<"client 127.0.0.1:55497 -> 127.0.0.1:5672">>,1}) at <0.532.0> exit with reason unexpected_delivery_and_no_default_consumer in context child_terminated
+[error] Supervisor {<0.531.0>,amqp_channel_sup} had child gen_consumer started with amqp_gen_consumer:start_link(amqp_selective_consumer, [], {<<"client 127.0.0.1:55497 -> 127.0.0.1:5672">>,1}) at <0.532.0> exit with reason reached_max_restart_intensity in context shutdown
+```
+
 ## TODO
 This is a non-exhaustive list of things in no particular order that I'd like to implement, think about, or try:
 
