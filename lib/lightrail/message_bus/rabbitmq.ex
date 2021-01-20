@@ -16,8 +16,6 @@ defmodule Lightrail.MessageBus.RabbitMQ do
 
   * setup for dead letter exchange/queue
 
-  * check delivery mode of publish -- should be "peristent" or mode #2
-
   """
 
   require Logger
@@ -54,7 +52,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
 
   def publish(%{channel: channel, config: config}, message, routing_key \\ "") do
     Logger.info("Publishing message to #{config[:exchange]}")
-    Basic.publish(channel, config[:exchange], routing_key, message)
+    Basic.publish(channel, config[:exchange], routing_key, message, persistent: true)
   end
 
   def cleanup(%{channel: channel, connection: connection} = state) do
