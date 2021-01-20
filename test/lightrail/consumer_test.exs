@@ -63,6 +63,7 @@ defmodule Lightrail.ConsumerTest do
     exit_fn = fn ->
       rmq_purge_queue(context.rmq_connection, "lightrail:test:events")
     end
+
     on_exit(exit_fn)
   end
 

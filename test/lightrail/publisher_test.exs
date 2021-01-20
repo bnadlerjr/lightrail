@@ -1,6 +1,6 @@
 defmodule Lightrail.PublisherTest do
   # Note that we need to use async: false since tests interact
-  # with external Rabbit exhcanges, queues, etc.
+  # with external Rabbit exchanges, queues, etc.
   use ExUnit.Case, async: false
   use Test.Support.RabbitCase
 
@@ -37,6 +37,7 @@ defmodule Lightrail.PublisherTest do
     exit_fn = fn ->
       rmq_purge_queue(context.connection, "lightrail:test:events")
     end
+
     on_exit(exit_fn)
   end
 

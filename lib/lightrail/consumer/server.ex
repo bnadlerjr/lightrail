@@ -14,6 +14,10 @@ defmodule Lightrail.Consumer.Server do
   @doc false
   @impl GenServer
   def init(%{module: module} = initial_state) do
+    # Trap exits so that terminate is called (in most situations). See
+    # https://blog.differentpla.net/blog/2014/11/13/erlang-terminate/
+    Process.flag(:trap_exit, true)
+
     config = apply(module, :init, [])
     state = Map.merge(initial_state, %{config: config})
     {:ok, state, {:continue, :init}}
@@ -38,13 +42,6 @@ defmodule Lightrail.Consumer.Server do
   def handle_info({:basic_cancel, %{consumer_tag: consumer_tag}}, %{module: module} = state) do
     Logger.warn("[#{module}]: The consumer was unexpectedly cancelled, tag: #{consumer_tag}")
     {:stop, :cancelled, state}
-  end
-
-  @doc false
-  @impl GenServer
-  def handle_info({:basic_cancel_ok, %{consumer_tag: consumer_tag}}, %{module: module} = state) do
-    Logger.info("[#{module}]: Consumer was cancelled, tag: #{consumer_tag}")
-    {:noreply, state}
   end
 
   @doc false
@@ -89,28 +86,9 @@ defmodule Lightrail.Consumer.Server do
 
   @doc false
   @impl GenServer
-  def terminate(:connection_closed = reason, %{module: module}) do
-    Logger.info("[#{module}]: Terminating consumer, reason: #{inspect(reason)}")
-  end
-
-  @doc false
-  @impl GenServer
-  def terminate(reason, %{module: module} = state) do
-    Logger.info("[#{module}]: Terminating consumer, reason: #{inspect(reason)}")
+  def terminate(reason, state) do
+    Logger.info("[#{state.module}]: Terminating consumer, reason: #{inspect(reason)}")
     @message_bus.cleanup(state)
-  end
-
-  @doc false
-  @impl GenServer
-  def terminate({{:shutdown, {:server_initiated_close, error_code, reason}}, _}, %{module: module}) do
-    Logger.error("[#{module}]: Terminating consumer, 
-        error_code: #{inspect(error_code)},
-        reason: #{inspect(reason)}")
-  end
-
-  @doc false
-  @impl GenServer
-  def terminate(reason, %{module: module}) do
-    Logger.error("[#{module}]: Terminating consumer, unexpected reason: #{inspect(reason)}")
+    :normal
   end
 end

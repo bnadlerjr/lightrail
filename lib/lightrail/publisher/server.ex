@@ -12,6 +12,10 @@ defmodule Lightrail.Publisher.Server do
   @doc false
   @impl GenServer
   def init(%{module: module} = initial_state) do
+    # Trap exits so that terminate is called (in most situations). See
+    # https://blog.differentpla.net/blog/2014/11/13/erlang-terminate/
+    Process.flag(:trap_exit, true)
+
     config = apply(module, :init, [])
     state = Map.merge(initial_state, %{config: config})
     {:ok, state, {:continue, :init}}
@@ -42,23 +46,8 @@ defmodule Lightrail.Publisher.Server do
   @doc false
   @impl GenServer
   def terminate(reason, %{module: module} = state) do
-    Logger.debug("[#{module}]: Terminating publisher, reason: #{inspect(reason)}")
+    Logger.info("[#{module}]: Terminating publisher, reason: #{inspect(reason)}")
     @message_bus.cleanup(state)
-  end
-
-  @doc false
-  @impl GenServer
-  def terminate({{:shutdown, {:server_initiated_close, error_code, reason}}, _}, %{module: module}) do
-    Logger.error(
-      "[#{module}]: Terminating publisher, error_code: #{inspect(error_code)}, reason: #{
-        inspect(reason)
-      }"
-    )
-  end
-
-  @doc false
-  @impl GenServer
-  def terminate(reason, %{module: module}) do
-    Logger.error("[#{module}]: Terminating publisher, unexpected reason: #{inspect(reason)}")
+    :normal
   end
 end
