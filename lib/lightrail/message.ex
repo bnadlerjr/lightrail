@@ -16,7 +16,10 @@ defmodule Lightrail.Message do
   """
   @spec prepare_for_publishing(struct) :: {:ok, String.t()} | {:error, String.t()}
   def prepare_for_publishing(protobuf) do
-    BinaryProtobuf.encode(protobuf)
+    protobuf
+    |> ensure_message_uuid()
+    |> ensure_correlation_id()
+    |> BinaryProtobuf.encode()
   end
 
   @doc """
@@ -35,4 +38,16 @@ defmodule Lightrail.Message do
         :error
     end
   end
+
+  defp ensure_message_uuid(%{uuid: uuid} = proto) when is_nil(uuid) or "" == uuid do
+    Map.put(proto, :uuid, UUID.uuid4())
+  end
+
+  defp ensure_message_uuid(proto), do: proto
+
+  defp ensure_correlation_id(%{correlation_id: id} = proto) when is_nil(id) or "" == id do
+    Map.put(proto, :correlation_id, UUID.uuid4())
+  end
+
+  defp ensure_correlation_id(proto), do: proto
 end

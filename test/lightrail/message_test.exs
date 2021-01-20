@@ -8,17 +8,9 @@ defmodule Lightrail.MessageTest do
   defmodule Subject do
     @behaviour Lightrail.Consumer
 
-    def start_link() do
-      Lightrail.Consumer.start_link(__MODULE__, name: __MODULE__)
-    end
-
     @impl Lightrail.Consumer
     def init() do
-      [
-        exchange: "lightrail_example_exchange",
-        queue: "lightrail_example_queue",
-        connection: "amqp://guest:guest@localhost:5672"
-      ]
+      []
     end
 
     @impl Lightrail.Consumer
@@ -30,6 +22,52 @@ defmodule Lightrail.MessageTest do
         _ ->
           :error
       end
+    end
+  end
+
+  describe "#prepare_for_publishing" do
+    test "returns the encoded protobuf" do
+      uuid = "deadbeef-dead-dead-dead-deaddeafbeef"
+      msg = Proto.new(uuid: uuid, correlation_id: uuid)
+      {:ok, encoded} = Message.prepare_for_publishing(msg)
+
+      expected =
+        ~s({\"encoded_message\":) <>
+          ~s(\"EiRkZWFkYmVlZi1kZWFkLWRlYWQtZGVhZC1kZWFkZGVhZmJlZWYaJGRlY) <>
+          ~s(WRiZWVmLWRlYWQtZGVhZC1kZWFkLWRlYWRkZWFmYmVlZg==\",) <>
+          ~s(\"type\":\"Test::Support::Message\"})
+
+      assert expected == encoded
+    end
+
+    test "doesn't override message or correlation UUID's if present" do
+      uuid = "deadbeef-dead-dead-dead-deaddeafbeef"
+      msg = Proto.new(uuid: uuid, correlation_id: uuid)
+      {:ok, encoded} = Message.prepare_for_publishing(msg)
+      {:ok, decoded} = BinaryProtobuf.decode(encoded)
+      assert uuid = decoded.uuid
+      assert uuid = decoded.correlation_id
+    end
+
+    test "adds a message UUID if one isn't present" do
+      msg = Proto.new(info: "this should succeed")
+      {:ok, encoded} = Message.prepare_for_publishing(msg)
+      {:ok, decoded} = BinaryProtobuf.decode(encoded)
+      assert "" != decoded.uuid
+    end
+
+    test "adds a correlation UUID if one isn't present" do
+      msg = Proto.new(info: "this should succeed")
+      {:ok, encoded} = Message.prepare_for_publishing(msg)
+      {:ok, decoded} = BinaryProtobuf.decode(encoded)
+      assert "" != decoded.correlation_id
+    end
+
+    test "doesn't add a user UUID of one isn't present" do
+      msg = Proto.new(info: "this should succeed")
+      {:ok, encoded} = Message.prepare_for_publishing(msg)
+      {:ok, decoded} = BinaryProtobuf.decode(encoded)
+      assert "" == decoded.user_uuid
     end
   end
 

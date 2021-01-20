@@ -44,7 +44,6 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] message persistence for published messages
 - [ ] message persistence for consumed messages
 - [ ] figure out how auto-generated docs work (also saw references in some places about executable docs)
-- [ ] generate UUID's for message if they're not provided
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
 - [ ] RPC support
 - [ ] setup telemetry for publisher genserver
@@ -60,3 +59,4 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] fix TODOs in Consumer.Server
 - [x] fix TODOs in MessageBus.RabbitMQ
 - [x] message bus behaviour? -- don't think it's needed, overkill
+- [x] generate UUID's for message if they're not provided
