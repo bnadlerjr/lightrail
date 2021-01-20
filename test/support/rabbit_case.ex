@@ -60,7 +60,7 @@ defmodule Test.Support.RabbitCase do
       def rmq_create_and_bind_queue(connection, queue, exchange) do
         {:ok, channel} = AMQP.Channel.open(connection)
         AMQP.Exchange.declare(channel, exchange, :fanout, durable: true)
-        AMQP.Queue.declare(channel, queue)
+        AMQP.Queue.declare(channel, queue, durable: true)
         AMQP.Queue.bind(channel, queue, exchange)
         AMQP.Channel.close(channel)
       end
@@ -108,11 +108,42 @@ defmodule Test.Support.RabbitCase do
         message_count
       end
 
-      defp get_queue_info(queue_name) do
-        url = "http://guest:guest@localhost:15672/api/queues"
-        {:ok, {a, b, resp}} = :httpc.request(String.to_charlist(url))
-        {:ok, results} = Jason.decode(resp, keys: :atoms)
+      @doc """
+      Retrieve information about the given queue using the Rabbit API.
+
+      """
+      def get_queue_info(queue_name) do
+        results = make_api_request(:queues)
         Enum.find(results, fn q -> queue_name == q.name end)
+      end
+
+      @doc """
+      Retrieve information about the given exchange using the Rabbit API.
+
+      """
+      def get_exchange_info(exchange_name) do
+        results = make_api_request(:exchanges)
+        Enum.find(results, fn q -> exchange_name == q.name end)
+      end
+
+      @doc """
+      Retrieve information about the binding between the given queue and
+      exchange. Returns nil if no binding can be found.
+
+      """
+      def get_binding_info(exchange_name, queue_name) do
+        finder = fn binding ->
+          exchange_name == binding.source and queue_name == binding.destination
+        end
+
+        results = make_api_request(:bindings)
+        Enum.find(results, finder)
+      end
+
+      defp make_api_request(resource) do
+        url = "http://guest:guest@localhost:15672/api/#{resource}"
+        {:ok, {_, _, resp}} = :httpc.request(String.to_charlist(url))
+        Jason.decode!(resp, keys: :atoms)
       end
     end
   end
