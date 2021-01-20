@@ -58,8 +58,8 @@ defmodule Lightrail.MessageBus.RabbitMQ do
   end
 
   def cleanup(%{channel: channel, connection: connection} = state) do
-    Channel.close(channel)
-    Connection.close(connection)
+    if Process.alive?(channel.pid), do: Channel.close(channel)
+    if Process.alive?(channel.pid), do: Connection.close(connection)
     {:ok, Map.drop(state, [:connection, :channel])}
   end
 

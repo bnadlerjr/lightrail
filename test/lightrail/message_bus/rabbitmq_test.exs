@@ -102,6 +102,24 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
       refute Process.alive?(channel.pid)
     end
 
+    test "doesn't try to close a channel or connection that's already closed" do
+      {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
+      {:ok, channel} = rmq_open_channel(connection)
+
+      rmq_close_channel(channel)
+      rmq_close_connection(connection)
+
+      state = %{
+        module: __MODULE__,
+        channel: channel,
+        connection: connection
+      }
+
+      {:ok, new_state} = RabbitMQ.cleanup(state)
+
+      assert new_state == %{module: __MODULE__}
+    end
+
     test "returns the unaltered state if connection and channel do not exist" do
       state = %{module: __MODULE__}
       {:ok, new_state} = RabbitMQ.cleanup(state)
