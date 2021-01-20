@@ -38,7 +38,8 @@ There are currently two tests in the `Lightrail.MessageBus.RabbitmqTest` module 
 ## TODO
 This is a non-exhaustive list of things in no particular order that I'd like to implement, think about, or try:
 
-- [ ] fix TODOs in MessageBus.RabbitMQ
+- [ ] look into using `ex_rabbit_pool` for connections
+- [ ] setup telemetry for MessageBus.RabbitMQ
 - [ ] how should supervisors work? develop consumer strategy
 - [ ] message persistence for published messages
 - [ ] message persistence for consumed messages
@@ -46,7 +47,6 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] generate UUID's for message if they're not provided
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
 - [ ] RPC support
-- [ ] message bus behaviour?
 - [ ] setup telemetry for publisher genserver
 - [ ] setup telemetry for consumer genserver
 - [ ] replace all hard-coded rabbitmq connection strings in tests
@@ -58,3 +58,5 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] setup credo config file
 - [x] fix TODOs in Publisher.Server
 - [x] fix TODOs in Consumer.Server
+- [x] fix TODOs in MessageBus.RabbitMQ
+- [x] message bus behaviour? -- don't think it's needed, overkill

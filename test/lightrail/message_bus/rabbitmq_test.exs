@@ -69,12 +69,22 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
       exchange_info = get_exchange_info("lightrail:test")
       assert exchange_info.durable
       assert "fanout" == exchange_info.type
+      assert %{"x-dead-letter-exchange": "lightrail:errors"} == exchange_info.arguments
+      assert not exchange_info.auto_delete
+      assert not exchange_info.internal
 
       queue_info = get_queue_info("lightrail:test:events")
       assert queue_info.durable
+      assert %{"x-dead-letter-exchange": "lightrail:errors"} == queue_info.arguments
+      assert not queue_info.auto_delete
+      assert not queue_info.exclusive
 
       binding_info = get_binding_info("lightrail:test", "lightrail:test:events")
-      assert binding_info
+      assert "lightrail:test" == binding_info.source
+      assert "lightrail:test:events" == binding_info.destination
+      assert %{} == binding_info.arguments
+      assert "queue" == binding_info.destination_type
+      assert "" == binding_info.routing_key
     end
   end
 

@@ -59,8 +59,8 @@ defmodule Test.Support.RabbitCase do
       """
       def rmq_create_and_bind_queue(connection, queue, exchange) do
         {:ok, channel} = AMQP.Channel.open(connection)
-        AMQP.Exchange.declare(channel, exchange, :fanout, durable: true)
-        AMQP.Queue.declare(channel, queue, durable: true)
+        AMQP.Exchange.fanout(channel, exchange, options())
+        AMQP.Queue.declare(channel, queue, options())
         AMQP.Queue.bind(channel, queue, exchange)
         AMQP.Channel.close(channel)
       end
@@ -94,7 +94,7 @@ defmodule Test.Support.RabbitCase do
       """
       def rmq_publish_message(connection, exchange, message, routing_key \\ "") do
         {:ok, channel} = AMQP.Channel.open(connection)
-        AMQP.Exchange.declare(channel, exchange, :fanout, durable: true)
+        AMQP.Exchange.fanout(channel, exchange, options())
         AMQP.Basic.publish(channel, exchange, routing_key, message)
         AMQP.Channel.close(channel)
       end
@@ -144,6 +144,13 @@ defmodule Test.Support.RabbitCase do
         url = "http://guest:guest@localhost:15672/api/#{resource}"
         {:ok, {_, _, resp}} = :httpc.request(String.to_charlist(url))
         Jason.decode!(resp, keys: :atoms)
+      end
+
+      defp options do
+        [
+          durable: true,
+          arguments: [{"x-dead-letter-exchange", :longstr, "lightrail:errors"}]
+        ]
       end
     end
   end

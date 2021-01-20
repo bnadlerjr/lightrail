@@ -2,19 +2,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
   @moduledoc """
   RabbitMQ implementation of the message bus.
 
-  TODO:
-  * if connection is provided in config args, use it; otherwise look for
-    connection info in app config and finally fallback to looking for an
-    environment variable
-
-  * can/should connection be re-used/shared? it's own
-    module (agent, genserver)?
-
-  * which queue options are configurable?
-
-  * setup telemetry
-
-  * setup for dead letter exchange/queue
+  This is an internal module, not part of the public API.
 
   """
 
@@ -25,7 +13,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    Exchange.declare(channel, config[:exchange], :fanout, durable: true)
+    Exchange.fanout(channel, config[:exchange], options())
 
     {:ok, Map.merge(state, %{channel: channel, connection: connection})}
   end
@@ -34,8 +22,8 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    Exchange.declare(channel, config[:exchange], :fanout, durable: true)
-    Queue.declare(channel, config[:queue], durable: true)
+    Exchange.fanout(channel, config[:exchange], options())
+    Queue.declare(channel, config[:queue], options())
     Queue.bind(channel, config[:queue], config[:exchange])
     Basic.consume(channel, config[:queue])
 
@@ -74,5 +62,12 @@ defmodule Lightrail.MessageBus.RabbitMQ do
         :timer.sleep(5000)
         connect(state)
     end
+  end
+
+  defp options do
+    [
+      durable: true,
+      arguments: [{"x-dead-letter-exchange", :longstr, "lightrail:errors"}]
+    ]
   end
 end
