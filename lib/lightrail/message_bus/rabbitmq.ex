@@ -25,7 +25,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    :ok = Exchange.declare(channel, config[:exchange], :fanout, durable: true)
+    Exchange.declare(channel, config[:exchange], :fanout, durable: true)
 
     {:ok, Map.merge(state, %{channel: channel, connection: connection})}
   end
@@ -34,10 +34,10 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    :ok = Exchange.declare(channel, config[:exchange], :fanout, durable: true)
-    {:ok, _} = Queue.declare(channel, config[:queue], durable: true)
-    :ok = Queue.bind(channel, config[:queue], config[:exchange])
-    {:ok, _consumer_tag} = Basic.consume(channel, config[:queue])
+    Exchange.declare(channel, config[:exchange], :fanout, durable: true)
+    Queue.declare(channel, config[:queue], durable: true)
+    Queue.bind(channel, config[:queue], config[:exchange])
+    Basic.consume(channel, config[:queue])
 
     {:ok, Map.merge(state, %{channel: channel, connection: connection})}
   end
