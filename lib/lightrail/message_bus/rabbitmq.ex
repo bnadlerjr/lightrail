@@ -10,13 +10,6 @@ defmodule Lightrail.MessageBus.RabbitMQ do
   * can/should connection be re-used/shared? it's own
     module (agent, genserver)?
 
-  * publish function should probably take state map to be consistent with
-    other functions signatures in this module; something like:
-    `def publish(%{exchange: exchange, channel: channel}, message, routing_key \\ "") do`
-
-  * What should the publish function return? Should it wrap the results
-    from Basic.publish? Thinking yes so that we don't leak AMQP stuff
-
   * which queue options are configurable?
 
   * setup telemetry
@@ -59,9 +52,9 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     Basic.reject(channel, tag, requeue: false)
   end
 
-  def publish(channel, exchange, message, routing_key \\ "") do
-    Logger.info("Publishing message to #{exchange}")
-    Basic.publish(channel, exchange, routing_key, message)
+  def publish(%{channel: channel, config: config}, message, routing_key \\ "") do
+    Logger.info("Publishing message to #{config[:exchange]}")
+    Basic.publish(channel, config[:exchange], routing_key, message)
   end
 
   def cleanup(%{channel: channel, connection: connection} = state) do

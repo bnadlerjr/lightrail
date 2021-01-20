@@ -30,9 +30,8 @@ defmodule Lightrail.Publisher.Server do
 
   @doc false
   @impl GenServer
-  def handle_call({:publish, message}, _from, %{channel: channel, config: config} = state) do
-    result = @message_bus.publish(channel, config[:exchange], message)
-    {:reply, result, state}
+  def handle_call({:publish, message}, _from, state) do
+    {:reply, @message_bus.publish(state, message), state}
   end
 
   @doc false
