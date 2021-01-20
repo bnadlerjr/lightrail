@@ -22,9 +22,11 @@ defmodule Lightrail.MixProject do
     [
       {:amqp, "~> 1.2"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ecto_sql, "~> 3.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:google_protos, "~> 0.1"},
       {:jason, "~> 1.1"},
+      {:postgrex, ">= 0.0.0"},
       {:protobuf, "~> 0.5.3"},
       {:telemetry, "~> 0.4"},
       {:uuid, "~> 1.1"}
