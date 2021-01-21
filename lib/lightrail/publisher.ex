@@ -72,7 +72,9 @@ defmodule Lightrail.Publisher do
   `module` - Callback module implementing `Lightrail.Publisher` behaviour.
 
   ## Options
-   * `:name` - used for name registration
+   * `:name` - Used for name registration.
+   * `:bus` - Module to use for the message bus. Defaults to
+              `Lightrail.MessageBus.RabbitMQ` if not given.
 
   ## Return values
   If the publisher is successfully created and initialized, this function
@@ -89,7 +91,14 @@ defmodule Lightrail.Publisher do
   """
   @spec start_link(module, Keyword.t()) :: {:ok, pid} | {:error, term}
   def start_link(module, options \\ []) do
-    GenServer.start_link(Lightrail.Publisher.Server, %{module: module}, options)
+    server_options = Keyword.drop(options, [:bus])
+
+    initial_state = %{
+      module: module,
+      bus: Keyword.get(options, :bus, Lightrail.MessageBus.RabbitMQ)
+    }
+
+    GenServer.start_link(Lightrail.Publisher.Server, initial_state, server_options)
   end
 
   @doc """

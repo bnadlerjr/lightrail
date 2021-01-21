@@ -7,8 +7,6 @@ defmodule Lightrail.Publisher.Server do
   require Logger
   use GenServer
 
-  @message_bus Application.compile_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
-
   @doc false
   @impl GenServer
   def init(%{module: module} = initial_state) do
@@ -23,30 +21,30 @@ defmodule Lightrail.Publisher.Server do
 
   @doc false
   @impl GenServer
-  def handle_continue(:init, state) do
-    {:ok, state} = @message_bus.setup_publisher(state)
+  def handle_continue(:init, %{bus: bus} = state) do
+    {:ok, state} = bus.setup_publisher(state)
     {:noreply, state}
   end
 
   @doc false
   @impl GenServer
-  def handle_call({:publish, message}, _from, state) do
-    {:reply, @message_bus.publish(state, message), state}
+  def handle_call({:publish, message}, _from, %{bus: bus} = state) do
+    {:reply, bus.publish(state, message), state}
   end
 
   @doc false
   @impl GenServer
-  def handle_info({:DOWN, _ref, :process, _pid, reason}, %{module: module} = state) do
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, %{module: module, bus: bus} = state) do
     Logger.info("[#{module}]: RabbitMQ connection is down! Reason: #{inspect(reason)}")
-    {:ok, state} = @message_bus.setup_publisher(state)
+    {:ok, state} = bus.setup_publisher(state)
     {:noreply, state}
   end
 
   @doc false
   @impl GenServer
-  def terminate(reason, %{module: module} = state) do
+  def terminate(reason, %{module: module, bus: bus} = state) do
     Logger.info("[#{module}]: Terminating publisher, reason: #{inspect(reason)}")
-    @message_bus.cleanup(state)
+    bus.cleanup(state)
     :normal
   end
 end
