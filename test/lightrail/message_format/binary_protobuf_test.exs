@@ -10,7 +10,8 @@ defmodule Lightrail.MessageFormat.BinaryProtobufTest do
 
       expected = {
         :ok,
-        "{\"encoded_message\":\"GgZhYmMxMjM=\",\"type\":\"Test::Support::Message\"}"
+        "{\"encoded_message\":\"GgZhYmMxMjM=\",\"type\":\"Test::Support::Message\"}",
+        "Test::Support::Message"
       }
 
       assert expected == BinaryProtobuf.encode(msg)
@@ -30,7 +31,7 @@ defmodule Lightrail.MessageFormat.BinaryProtobufTest do
   describe "#decode" do
     test "decode a message to a protobuf" do
       msg = Message.new(uuid: "abc123")
-      {:ok, encoded} = BinaryProtobuf.encode(msg)
+      {:ok, encoded, _type} = BinaryProtobuf.encode(msg)
 
       expected = {
         :ok,

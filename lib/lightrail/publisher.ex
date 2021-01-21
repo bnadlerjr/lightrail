@@ -110,7 +110,7 @@ defmodule Lightrail.Publisher do
   @spec publish(pid, struct) :: :ok | {:error, term}
   def publish(pid, protobuf) do
     case Message.prepare_for_publishing(protobuf) do
-      {:ok, message} ->
+      {:ok, message, _type} ->
         GenServer.call(pid, {:publish, message})
 
       {:error, error} ->

@@ -22,7 +22,8 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
   """
 
   @doc """
-  Encodes `protobuf` in message format.
+  Encodes `protobuf` in message format. Returns the encoded protobuf and the
+  message type as a string in colon format.
 
   Encodes the given `protobuf` by creating a JSON string with two attributes:
 
@@ -40,13 +41,14 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
     uuid: "3a345c88-f84a-4ceb-b0b3-0e5ce028eea3"
   }
 
-  iex> {:ok, encoded} = Lightrail.MessageFormat.BinaryProtobuf.encode(msg)
+  iex> {:ok, encoded, _type} = Lightrail.MessageFormat.BinaryProtobuf.encode(msg)
   {:ok,
-   "{\"encoded_message\":\"CiQ3MTIwZGQ1NC05ZTAwLTQ3YzMtODVmNi1mZTExZDBiMTU5ZjUSJDczYjNjMmQzLWIzZWMtNGRmOC05M2M4LWYzYzA4ODdmNWQwMhokM2EzNDVjODgtZjg0YS00Y2ViLWIwYjMtMGU1Y2UwMjhlZWEz\",\"type\":\"Test::Support::Message\"}"}
+   "{\"encoded_message\":\"CiQ3MTIwZGQ1NC05ZTAwLTQ3YzMtODVmNi1mZTExZDBiMTU5ZjUSJDczYjNjMmQzLWIzZWMtNGRmOC05M2M4LWYzYzA4ODdmNWQwMhokM2EzNDVjODgtZjg0YS00Y2ViLWIwYjMtMGU1Y2UwMjhlZWEz\",\"type\":\"Test::Support::Message\"}",
+   "Test::Support::Message"}
   ```
 
   """
-  @spec encode(struct) :: {:ok, String.t()} | {:error, String.t()}
+  @spec encode(struct) :: {:ok, String.t(), String.t()} | {:error, String.t()}
   def encode(protobuf) when is_map(protobuf) or is_atom(protobuf) do
     protobuf
     |> build_payload()
@@ -71,9 +73,10 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
     uuid: "3a345c88-f84a-4ceb-b0b3-0e5ce028eea3"
   }
 
-  iex> {:ok, encoded} = Lightrail.MessageFormat.BinaryProtobuf.encode(msg)
+  iex> {:ok, encoded, _type} = Lightrail.MessageFormat.BinaryProtobuf.encode(msg)
   {:ok,
-   "{\"encoded_message\":\"CiQ3MTIwZGQ1NC05ZTAwLTQ3YzMtODVmNi1mZTExZDBiMTU5ZjUSJDczYjNjMmQzLWIzZWMtNGRmOC05M2M4LWYzYzA4ODdmNWQwMhokM2EzNDVjODgtZjg0YS00Y2ViLWIwYjMtMGU1Y2UwMjhlZWEz\",\"type\":\"Test::Support::Message\"}"}
+   "{\"encoded_message\":\"CiQ3MTIwZGQ1NC05ZTAwLTQ3YzMtODVmNi1mZTExZDBiMTU5ZjUSJDczYjNjMmQzLWIzZWMtNGRmOC05M2M4LWYzYzA4ODdmNWQwMhokM2EzNDVjODgtZjg0YS00Y2ViLWIwYjMtMGU1Y2UwMjhlZWEz\",\"type\":\"Test::Support::Message\"}",
+   "Test::Support::Message"}
 
   iex> {:ok, decoded} = Lightrail.MessageFormat.BinaryProtobuf.decode(encoded)
   {:ok,
@@ -124,7 +127,13 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
 
   defp encode_message({:error, _} = error), do: error
 
-  defp encode_payload_as_json({:ok, payload, _}), do: Jason.encode(payload)
+  defp encode_payload_as_json({:ok, payload, _}) do
+    case Jason.encode(payload) do
+      {:ok, json} -> {:ok, json, payload.type}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   defp encode_payload_as_json({:error, _} = error), do: error
 
   defp parse_type({:ok, %{type: type} = payload}) when is_binary(type) do

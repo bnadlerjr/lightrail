@@ -81,7 +81,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Publish a message
     msg = Proto.new(info: "this should be acked")
-    {:ok, encoded} = Message.prepare_for_publishing(msg)
+    {:ok, encoded, _type} = Message.prepare_for_publishing(msg)
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
@@ -107,7 +107,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Publish a message
     msg = Proto.new(info: "this should be rejected")
-    {:ok, encoded} = Message.prepare_for_publishing(msg)
+    {:ok, encoded, _type} = Message.prepare_for_publishing(msg)
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
@@ -133,7 +133,7 @@ defmodule Lightrail.ConsumerTest do
 
     # Publish a message
     msg = Proto.new(info: "this should blow up")
-    {:ok, encoded} = Message.prepare_for_publishing(msg)
+    {:ok, encoded, _type} = Message.prepare_for_publishing(msg)
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
