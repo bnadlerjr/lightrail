@@ -8,6 +8,44 @@ This project is _not_ intended to be published to Hex. Install by cloning this r
 
 ## Notes
 
+### iex Helpers
+Several aliases are provided to make dealing with the repo easier. See the `.iex.exs` file in the project root for details.
+
+### Installation for Clients (example docs)
+1. Add `lightrail` to your list of dependencies in `mix.exs`:
+
+```
+def deps do
+  [{:lightrail, "~> 0.1"}]
+end
+```
+
+2. Ensure `lightrail` is started before your application:
+
+```
+def application do
+  [applications: [:lightrail]]
+end
+```
+
+3. Lightrail does not ship with its own repo. Use your application's repo:
+
+```
+config :lightrail, repo: MyApp.Repo
+```
+
+4. Create a migration for the message tables by running:
+
+```
+mix lightrail.gen.migration
+```
+
+5. Migrate
+
+```
+mix ecto.migrate
+```
+
 ### Testing Publisher/Consumer GenServers
 
 Originally I had a few tests that exercised the publisher and consumer GenServers directly. After dealing with them for awhile I opted against using them and instead test GenServers through their respective interfaces (i.e. `publisher_test.exs` and `consumer_test.exs`). There a few reasons for this.
@@ -38,10 +76,10 @@ There are currently two tests in the `Lightrail.MessageBus.RabbitmqTest` module 
 ## TODO
 This is a non-exhaustive list of things in no particular order that I'd like to implement, think about, or try:
 
+- [ ] mix task for generating migrations
 - [ ] look into using `ex_rabbit_pool` for connections
 - [ ] setup telemetry for MessageBus.RabbitMQ
 - [ ] how should supervisors work? develop consumer strategy
-- [ ] message persistence for published messages
 - [ ] message persistence for consumed messages
 - [ ] figure out how auto-generated docs work (also saw references in some places about executable docs)
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
@@ -60,3 +98,5 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] fix TODOs in MessageBus.RabbitMQ
 - [x] message bus behaviour? -- don't think it's needed, overkill
 - [x] generate UUID's for message if they're not provided
+- [x] message persistence for published messages
+- [x] setup script should create DB and run migrations (both envs)

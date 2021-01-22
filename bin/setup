@@ -2,6 +2,19 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+echo
+echo "> Retrieving dependencies..."
 mix deps.get
+
+echo
+echo "> Compiling dependencies..."
 mix deps.compile
+
+echo
+echo "> Compiling lightrail..."
 mix compile
+
+echo
+echo "> Setting up databases..."
+mix ecto.setup
+MIX_ENV=test mix ecto.setup

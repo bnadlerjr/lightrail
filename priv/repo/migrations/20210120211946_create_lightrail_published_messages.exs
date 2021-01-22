@@ -1,4 +1,4 @@
-defmodule Lightrail.Repo.Migrations.CreateLightrailPublishedMessages do
+defmodule Test.Support.Repo.Migrations.CreateLightrailPublishedMessages do
   use Ecto.Migration
 
   def change do

@@ -25,7 +25,7 @@ defmodule Lightrail.Messages.PublishedMessage do
     message
     |> cast(attrs, permitted_fields())
     |> validate_required([:encoded_message, :message_type, :status, :uuid])
-    |> unique_constraint(:uuid)
+    |> unique_constraint(:uuid, name: "lightrail_published_messages_pkey")
   end
 
   defp permitted_fields do

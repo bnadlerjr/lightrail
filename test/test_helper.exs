@@ -3,4 +3,7 @@
 # `mix test --only rabbit`. CI will always run them.
 ExUnit.configure(exclude: [rabbit: true])
 
+Test.Support.Repo.start_link()
+Ecto.Adapters.SQL.Sandbox.mode(Test.Support.Repo, :manual)
+
 ExUnit.start(capture_log: true)
