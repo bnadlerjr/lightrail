@@ -37,7 +37,10 @@ defmodule Lightrail.Publisher do
 
   """
 
+  require Logger
+
   alias Lightrail.Message
+  alias Lightrail.Messages
 
   @doc """
   Used to provide publisher configuration.
@@ -118,12 +121,52 @@ defmodule Lightrail.Publisher do
   """
   @spec publish(pid, struct) :: :ok | {:error, term}
   def publish(pid, protobuf) do
+    %{protobuf: protobuf, pid: pid}
+    |> prepare_msg()
+    |> call_genserver()
+    |> persist()
+    |> log_details()
+  end
+
+  defp prepare_msg(%{protobuf: protobuf} = state) do
     case Message.prepare_for_publishing(protobuf) do
-      {:ok, message, _type} ->
-        GenServer.call(pid, {:publish, message})
+      {:ok, message, type} ->
+        {:ok, Map.merge(state, %{message: message, type: type})}
 
       {:error, error} ->
-        {:error, "An error occurred while attempting to publish a message. #{error}"}
+        {:error, error}
     end
+  end
+
+  defp call_genserver({:ok, %{pid: pid, message: message} = state}) do
+    case GenServer.call(pid, {:publish, message}) do
+      {:ok, exchange} ->
+        {:ok, Map.merge(state, %{exchange: exchange})}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp call_genserver({:error, error}), do: {:error, error}
+
+  defp persist({:ok, %{protobuf: proto, message: msg, exchange: exch, type: type} = state}) do
+    case Messages.insert(%{protobuf: proto, encoded: msg, exchange: exch, type: type}) do
+      {:ok, _} -> {:ok, state}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp persist({:error, error}), do: {:error, error}
+
+  defp log_details({:ok, %{type: type, exchange: exchange} = state}) do
+    Logger.info("[#{__MODULE__}]: Published a #{inspect(type)} message to #{inspect(exchange)}")
+    {:ok, state}
+  end
+
+  defp log_details({:error, error}) do
+    msg = "Failed to publish message. #{inspect(error)}"
+    Logger.error("[#{__MODULE__}]: #{msg}")
+    {:error, msg}
   end
 end

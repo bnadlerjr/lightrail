@@ -76,6 +76,7 @@ There are currently two tests in the `Lightrail.MessageBus.RabbitmqTest` module 
 ## TODO
 This is a non-exhaustive list of things in no particular order that I'd like to implement, think about, or try:
 
+- [ ] remove specs from non-public API modules
 - [ ] mix task for generating migrations
 - [ ] look into using `ex_rabbit_pool` for connections
 - [ ] setup telemetry for MessageBus.RabbitMQ

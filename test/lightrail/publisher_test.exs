@@ -4,9 +4,11 @@ defmodule Lightrail.PublisherTest do
   use ExUnit.Case, async: false
   use Test.Support.RabbitCase
 
+  alias Ecto.Adapters.SQL.Sandbox
   alias Test.Support.Helpers
   alias Test.Support.Message
   alias Test.Support.Publisher
+  alias Test.Support.Repo
 
   @timeout _up_to_thirty_seconds = 30_000
 
@@ -39,6 +41,7 @@ defmodule Lightrail.PublisherTest do
     end
 
     on_exit(exit_fn)
+    :ok = Sandbox.checkout(Repo)
   end
 
   describe "#publish" do
@@ -49,14 +52,21 @@ defmodule Lightrail.PublisherTest do
         assert 0 == rmq_queue_count("lightrail:test:events")
       end)
 
+      # Get the current message count
+      count_before = Repo.aggregate("lightrail_published_messages", :count, :uuid)
+
       # Publish a message
-      proto = Message.new(uuid: "abc123")
-      assert :ok == Publisher.publish_message(proto)
+      proto = Message.new(uuid: UUID.uuid4())
+      {:ok, _} = Publisher.publish_message(proto)
 
       # Make sure it arrived in the queue
       Helpers.wait_for_passing(@timeout, fn ->
         assert 1 == rmq_queue_count("lightrail:test:events")
       end)
+
+      # Make sure the message was persisted
+      count_after = Repo.aggregate("lightrail_published_messages", :count, :uuid)
+      assert 1 == count_after - count_before
     end
 
     @tag :rabbit
@@ -69,7 +79,7 @@ defmodule Lightrail.PublisherTest do
       # Try to publish a bad message
       expected = {
         :error,
-        "An error occurred while attempting to publish a message. Argument Error: Valid Protobuf required"
+        "Failed to publish message. \"Argument Error: Valid Protobuf required\""
       }
 
       assert expected == Publisher.publish_message("not a protobuf")
@@ -78,6 +88,9 @@ defmodule Lightrail.PublisherTest do
       Helpers.wait_for_passing(@timeout, fn ->
         assert 0 == rmq_queue_count("lightrail:test:events")
       end)
+
+      # Make sure the message was not persisted
+      assert 0 == Repo.aggregate("lightrail_published_messages", :count, :uuid)
     end
   end
 end

@@ -28,8 +28,11 @@ defmodule Lightrail.Publisher.Server do
 
   @doc false
   @impl GenServer
-  def handle_call({:publish, message}, _from, %{bus: bus} = state) do
-    {:reply, bus.publish(state, message), state}
+  def handle_call({:publish, message}, _from, %{bus: bus, config: config} = state) do
+    case bus.publish(state, message) do
+      :ok -> {:reply, {:ok, config[:exchange]}, state}
+      {:error, error} -> {:reply, {:error, error}, state}
+    end
   end
 
   @doc false
