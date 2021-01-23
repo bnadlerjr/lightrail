@@ -41,7 +41,8 @@ defmodule Lightrail.MessageFormat.BinaryProtobufTest do
           user_uuid: "",
           uuid: "abc123",
           info: ""
-        }
+        },
+        "Test::Support::Message"
       }
 
       assert expected == BinaryProtobuf.decode(encoded)

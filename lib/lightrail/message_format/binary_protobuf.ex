@@ -48,7 +48,6 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
   ```
 
   """
-  @spec encode(struct) :: {:ok, String.t(), String.t()} | {:error, String.t()}
   def encode(protobuf) when is_map(protobuf) or is_atom(protobuf) do
     protobuf
     |> build_payload()
@@ -85,11 +84,11 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
      correlation_id: "73b3c2d3-b3ec-4df8-93c8-f3c0887f5d02",
      user_uuid: "7120dd54-9e00-47c3-85f6-fe11d0b159f5",
      uuid: "3a345c88-f84a-4ceb-b0b3-0e5ce028eea3"
-   }}
+   },
+   "Test::Support::Message"}
   ```
 
   """
-  @spec decode(String.t()) :: {:ok, struct} | {:error, String.t()}
   def decode(message) when not is_binary(message) do
     {:error, "Malformed JSON given. Must be a string"}
   end
@@ -158,14 +157,14 @@ defmodule Lightrail.MessageFormat.BinaryProtobuf do
   defp check_that_module_is_defined({:error, _} = error), do: error
 
   defp decode_protobuf({:ok, payload}) do
-    %{module: module, encoded_message: encoded_message} = payload
+    %{module: module, encoded_message: encoded_message, type: type} = payload
 
     decoded_message =
       encoded_message
       |> Base.decode64!(ignore: :whitespace)
       |> module.decode
 
-    {:ok, decoded_message}
+    {:ok, decoded_message, type}
   rescue
     # What's the specific error we should rescue here?
     _ -> {:error, "Cannot decode protobuf"}
