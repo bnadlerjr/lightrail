@@ -15,6 +15,9 @@ echo "> Compiling lightrail..."
 mix compile
 
 echo
-echo "> Setting up databases..."
+echo "> Setting up development database..."
 mix ecto.setup
+
+echo
+echo "> Setting up test database..."
 MIX_ENV=test mix ecto.setup
