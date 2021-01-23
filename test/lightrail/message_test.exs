@@ -5,26 +5,6 @@ defmodule Lightrail.MessageTest do
   alias Lightrail.MessageFormat.BinaryProtobuf
   alias Test.Support.Message, as: Proto
 
-  defmodule Subject do
-    @behaviour Lightrail.Consumer
-
-    @impl Lightrail.Consumer
-    def init() do
-      []
-    end
-
-    @impl Lightrail.Consumer
-    def handle_message(message) do
-      case message.info do
-        "this should succeed" ->
-          :ok
-
-        _ ->
-          :error
-      end
-    end
-  end
-
   describe "#prepare_for_publishing" do
     test "returns the encoded protobuf" do
       uuid = "deadbeef-dead-dead-dead-deaddeafbeef"
@@ -72,22 +52,12 @@ defmodule Lightrail.MessageTest do
     end
   end
 
-  describe "#consume" do
-    test "successfully process a binary protobuf message" do
+  describe "#decode" do
+    test "successfully decode a binary protobuf message" do
       msg = Proto.new(info: "this should succeed")
       {:ok, encoded, _type} = BinaryProtobuf.encode(msg)
-      assert :ok == Message.consume(encoded, Subject)
-    end
-
-    test "handling message handler errors" do
-      msg = Proto.new(info: "this should fail")
-      {:ok, encoded, _type} = BinaryProtobuf.encode(msg)
-      assert :error == Message.consume(encoded, Subject)
-    end
-
-    test "handling binary protobuf decode errors" do
-      encoded = "not a valid protobuf"
-      assert :error == Message.consume(encoded, Subject)
+      {:ok, proto} = Message.decode(encoded)
+      assert proto == msg
     end
   end
 end

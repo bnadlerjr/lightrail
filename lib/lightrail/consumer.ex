@@ -133,7 +133,14 @@ defmodule Lightrail.Consumer do
     # apply handler
     # set consumed message status :success or :error based on handler result
     # rescue any uncaught exceptions return :error
-    Message.consume(payload, module)
+    case Message.decode(payload) do
+      {:ok, proto} ->
+        apply(module, :handle_message, [proto])
+
+      {:error, error} ->
+        Logger.error("[#{module}]: An error occurred while decoding a message. #{error}")
+        :error
+    end
   rescue
     reason ->
       full_error = {reason, __STACKTRACE__}

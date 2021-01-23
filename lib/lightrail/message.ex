@@ -14,7 +14,6 @@ defmodule Lightrail.Message do
   a message format.
 
   """
-  @spec prepare_for_publishing(struct) :: {:ok, String.t()} | {:error, String.t()}
   def prepare_for_publishing(protobuf) do
     protobuf
     |> ensure_message_uuid()
@@ -23,20 +22,11 @@ defmodule Lightrail.Message do
   end
 
   @doc """
-  Takes a JSON `payload`, decodes it, and consumes it by applying a
-  handler function.
+  Takes a JSON `payload` and decodes it.
 
   """
-  @spec consume(String.t(), module) :: :ok | :error
-  def consume(payload, module) do
-    case BinaryProtobuf.decode(payload) do
-      {:ok, proto} ->
-        apply(module, :handle_message, [proto])
-
-      {:error, error} ->
-        Logger.error("[#{module}]: An error occurred while decoding a message. #{error}")
-        :error
-    end
+  def decode(payload) do
+    BinaryProtobuf.decode(payload)
   end
 
   defp ensure_message_uuid(%{uuid: uuid} = proto) when is_nil(uuid) or "" == uuid do
