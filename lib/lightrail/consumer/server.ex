@@ -7,8 +7,6 @@ defmodule Lightrail.Consumer.Server do
   require Logger
   use GenServer
 
-  alias Lightrail.Message
-
   @message_bus Application.compile_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
 
   @doc false
@@ -47,41 +45,15 @@ defmodule Lightrail.Consumer.Server do
   @doc false
   @impl GenServer
   def handle_info({:basic_deliver, payload, attributes}, %{module: module} = state) do
-    # Think about pulling this ack / reject /rescue logic up into the
-    # Message module. Maybe something like:
-    #
-    # case Message.consume(payload, module) do
-    #   :ack ->
-    #     @message_bus.ack(state, attributes)
-    #     {:noreply, state}
-    #
-    #   :reject ->
-    #     @message_bus.reject(state, attributes)
-    #     {:noreply, state}
-    #
-    #   :error ->
-    #     @message_bus.reject(state, attributes)
-    #     {:noreply, :error}
-    # end
-
-    case Message.consume(payload, module) do
+    case Lightrail.Consumer.process(payload, attributes, module) do
       :error ->
         @message_bus.reject(state, attributes)
+        {:noreply, :error}
 
       _ ->
         @message_bus.ack(state, attributes)
+        {:noreply, state}
     end
-
-    {:noreply, state}
-  rescue
-    reason ->
-      full_error = {reason, __STACKTRACE__}
-
-      Logger.error("[#{module}]: Unhandled exception while consuming message.
-        #{inspect(full_error)}")
-
-      @message_bus.reject(state, attributes)
-      {:noreply, :error}
   end
 
   @doc false

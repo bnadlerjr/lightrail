@@ -40,6 +40,8 @@ defmodule Lightrail.Consumer do
 
   require Logger
 
+  alias Lightrail.Message
+
   @doc """
   Used to provide consumer configuration.
 
@@ -123,5 +125,22 @@ defmodule Lightrail.Consumer do
   @spec stop(pid, term) :: :ok
   def stop(pid, reason \\ :normal) do
     GenServer.stop(pid, reason)
+  end
+
+  def process(payload, _attributes, module) do
+    # decode payload
+    # create or update consumed message with status :processing
+    # apply handler
+    # set consumed message status :success or :error based on handler result
+    # rescue any uncaught exceptions return :error
+    Message.consume(payload, module)
+  rescue
+    reason ->
+      full_error = {reason, __STACKTRACE__}
+
+      Logger.error("[#{module}]: Unhandled exception while consuming message.
+        #{inspect(full_error)}")
+
+      :error
   end
 end
