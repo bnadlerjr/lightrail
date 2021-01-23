@@ -25,6 +25,7 @@ defmodule Lightrail.MixProject do
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ecto_sql, "~> 3.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:google_protos, "~> 0.1"},
       {:jason, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
