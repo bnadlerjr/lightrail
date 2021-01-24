@@ -20,6 +20,32 @@ defmodule Lightrail.MessagesConsumedMessageTest do
     %{uuid: uuid, valid_attrs: attrs}
   end
 
+  describe "status transitions" do
+    test "processing -> success" do
+      msg = %ConsumedMessage{status: "processing"}
+      changeset = ConsumedMessage.transition(msg, "success")
+      assert changeset.valid?
+      result = Ecto.Changeset.apply_changes(changeset)
+      assert "success" == result.status
+    end
+
+    test "processing -> failed_to_process" do
+      msg = %ConsumedMessage{status: "processing"}
+      changeset = ConsumedMessage.transition(msg, "failed_to_process")
+      assert changeset.valid?
+      result = Ecto.Changeset.apply_changes(changeset)
+      assert "failed_to_process" == result.status
+    end
+
+    test "failed_to_process -> processing" do
+      msg = %ConsumedMessage{status: "failed_to_process"}
+      changeset = ConsumedMessage.transition(msg, "processing")
+      assert changeset.valid?
+      result = Ecto.Changeset.apply_changes(changeset)
+      assert "processing" == result.status
+    end
+  end
+
   describe "#changeset" do
     test "permitted fields", %{uuid: uuid, valid_attrs: valid_attrs} do
       changeset = ConsumedMessage.changeset(%ConsumedMessage{}, valid_attrs)
