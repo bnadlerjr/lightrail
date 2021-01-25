@@ -119,7 +119,7 @@ defmodule Lightrail.Publisher do
   ```
 
   """
-  @spec publish(pid, struct) :: :ok | {:error, term}
+  @spec publish(module, struct) :: :ok | {:error, term}
   def publish(pid, protobuf) do
     %{protobuf: protobuf, pid: pid}
     |> prepare_msg()
