@@ -4,6 +4,9 @@ defmodule Test.Support.Helpers do
 
   """
 
+  alias Lightrail.Messages.ConsumedMessage
+  alias Test.Support.Repo
+
   @doc """
   Repeatedly executes `fun` until it either returns `true` or
   reaches `timeout`.
@@ -29,4 +32,21 @@ defmodule Test.Support.Helpers do
   end
 
   def wait_for_passing(_timeout, fun), do: fun.()
+
+  defmacro assert_difference(expr, [count: count], do: block) do
+    quote do
+      before = unquote(expr)
+      unquote(block)
+      after_ = unquote(expr)
+      assert unquote(count) == after_ - before
+    end
+  end
+
+  def row_count(table, field \\ :uuid) do
+    Repo.aggregate(table, :count, field)
+  end
+
+  def get_consumed_message!(uuid, queue \\ "lightrail:test:event") do
+    Repo.get_by!(ConsumedMessage, %{uuid: uuid, queue: queue})
+  end
 end

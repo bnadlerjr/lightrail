@@ -4,10 +4,13 @@ defmodule Lightrail.ConsumerTest do
   use ExUnit.Case, async: false
   use Test.Support.RabbitCase
 
+  import Test.Support.Helpers
+
+  alias Ecto.Adapters.SQL.Sandbox
   alias Lightrail.Consumer
   alias Lightrail.Message
-  alias Test.Support.Helpers
   alias Test.Support.Message, as: Proto
+  alias Test.Support.Repo
 
   @timeout _up_to_thirty_seconds = 30_000
 
@@ -65,6 +68,54 @@ defmodule Lightrail.ConsumerTest do
     end
 
     on_exit(exit_fn)
+    :ok = Sandbox.checkout(Repo)
+    Sandbox.mode(Repo, {:shared, self()})
+  end
+
+  describe "#process" do
+    setup do
+      %{module: Subject, exchange: "lightrail:test", queue: "lightrail:test:event"}
+    end
+
+    test "successfully process the message payload", context do
+      proto = Proto.new(uuid: UUID.uuid4(), info: "this should be acked")
+      {:ok, encoded, _type} = Message.prepare_for_publishing(proto)
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 1 do
+        :ok = Consumer.process(encoded, %{}, context)
+      end
+
+      persisted = get_consumed_message!(proto.uuid)
+      assert "success" == persisted.status
+    end
+
+    test "message could not be decoded", context do
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        :error = Consumer.process("invalid", %{}, context)
+      end
+    end
+
+    test "message could not be persisted", context do
+      proto = Proto.new(uuid: UUID.uuid4(), info: "this should be acked")
+      {:ok, encoded, _type} = Message.prepare_for_publishing(proto)
+      invalid_info = %{context | queue: nil}
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        :error = Consumer.process(encoded, %{}, invalid_info)
+      end
+    end
+
+    test "message processing handler failed", context do
+      proto = Proto.new(uuid: UUID.uuid4(), info: "this should be rejected")
+      {:ok, encoded, _type} = Message.prepare_for_publishing(proto)
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 1 do
+        :error = Consumer.process(encoded, %{}, context)
+      end
+
+      persisted = get_consumed_message!(proto.uuid)
+      assert "failed_to_process" == persisted.status
+    end
   end
 
   test "starting a new consumer" do
@@ -75,7 +126,7 @@ defmodule Lightrail.ConsumerTest do
   @tag :rabbit
   test "acknowledging a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -85,7 +136,7 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -93,7 +144,7 @@ defmodule Lightrail.ConsumerTest do
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer processed the message
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 0 == rmq_queue_count("lightrail:test:events")
     end)
   end
@@ -101,7 +152,7 @@ defmodule Lightrail.ConsumerTest do
   @tag :rabbit
   test "rejecting a message", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -111,7 +162,7 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -119,7 +170,7 @@ defmodule Lightrail.ConsumerTest do
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer rejected the message
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 1 == rmq_queue_count("lightrail:test:events")
     end)
   end
@@ -127,7 +178,7 @@ defmodule Lightrail.ConsumerTest do
   @tag :rabbit
   test "error handling", %{rmq_connection: connection} do
     # Make sure the queue is empty
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 0 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -137,7 +188,7 @@ defmodule Lightrail.ConsumerTest do
     rmq_publish_message(connection, "lightrail:test", encoded)
 
     # Make sure it arrived in the queue
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 1 == rmq_queue_count("lightrail:test:events")
     end)
 
@@ -145,7 +196,7 @@ defmodule Lightrail.ConsumerTest do
     start_supervised!(%{id: Subject, start: {Subject, :start_link, []}})
 
     # Assert the consumer rejected the message
-    Helpers.wait_for_passing(@timeout, fn ->
+    wait_for_passing(@timeout, fn ->
       assert 1 == rmq_queue_count("lightrail:test:events")
     end)
   end

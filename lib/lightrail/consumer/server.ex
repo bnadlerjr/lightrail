@@ -44,8 +44,11 @@ defmodule Lightrail.Consumer.Server do
 
   @doc false
   @impl GenServer
-  def handle_info({:basic_deliver, payload, attributes}, %{module: module} = state) do
-    case Lightrail.Consumer.process(payload, attributes, module) do
+  def handle_info({:basic_deliver, payload, attributes}, state) do
+    %{module: module, config: config} = state
+    info = %{module: module, exchange: config[:exchange], queue: config[:queue]}
+
+    case Lightrail.Consumer.process(payload, attributes, info) do
       :error ->
         @message_bus.reject(state, attributes)
         {:noreply, :error}

@@ -81,7 +81,6 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] look into using `ex_rabbit_pool` for connections
 - [ ] setup telemetry for MessageBus.RabbitMQ
 - [ ] how should supervisors work? develop consumer strategy
-- [ ] message persistence for consumed messages
 - [ ] figure out how auto-generated docs work (also saw references in some places about executable docs)
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
 - [ ] RPC support
@@ -101,3 +100,4 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] generate UUID's for message if they're not provided
 - [x] message persistence for published messages
 - [x] setup script should create DB and run migrations (both envs)
+- [x] message persistence for consumed messages

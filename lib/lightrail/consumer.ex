@@ -41,6 +41,7 @@ defmodule Lightrail.Consumer do
   require Logger
 
   alias Lightrail.Message
+  alias Lightrail.Messages
 
   @doc """
   Used to provide consumer configuration.
@@ -127,27 +128,75 @@ defmodule Lightrail.Consumer do
     GenServer.stop(pid, reason)
   end
 
-  def process(payload, _attributes, module) do
-    # decode payload
-    # create or update consumed message with status :processing
-    # apply handler
-    # set consumed message status :success or :error based on handler result
-    # rescue any uncaught exceptions return :error
-    case Message.decode(payload) do
-      {:ok, proto} ->
-        apply(module, :handle_message, [proto])
-
-      {:error, error} ->
-        Logger.error("[#{module}]: An error occurred while decoding a message. #{error}")
-        :error
-    end
+  def process(payload, _attrs, %{module: module} = state) do
+    Map.merge(state, %{payload: payload})
+    |> decode_payload()
+    |> find_or_create_message()
+    # if message is already being processed, move on
+    |> apply_handler()
   rescue
     reason ->
       full_error = {reason, __STACKTRACE__}
 
-      Logger.error("[#{module}]: Unhandled exception while consuming message.
-        #{inspect(full_error)}")
+      Logger.error(
+        "[#{module}]: Unhandled exception while " <>
+          "consuming message. #{inspect(full_error)}"
+      )
 
       :error
   end
+
+  defp decode_payload(%{payload: payload, module: module} = info) do
+    case Message.decode(payload) do
+      {:ok, proto, type} ->
+        Map.merge(info, %{proto: proto, type: type})
+
+      {:error, error} ->
+        Logger.error(
+          "[#{module}]: An error occurred while " <>
+            "decoding a message. #{error}"
+        )
+
+        :error
+    end
+  end
+
+  defp find_or_create_message(%{module: module} = info) do
+    params = %{
+      protobuf: info.proto,
+      encoded: info.payload,
+      exchange: info.exchange,
+      type: info.type,
+      queue: info.queue
+    }
+
+    case Messages.upsert(params) do
+      {:ok, persisted} ->
+        Map.merge(info, %{persisted: persisted})
+
+      {:error, error} ->
+        Logger.error(
+          "[#{module}]: An error occurred while " <>
+            "persisting a message. #{error}"
+        )
+
+        :error
+    end
+  end
+
+  defp find_or_create_message(:error), do: :error
+
+  defp apply_handler(%{proto: proto, module: module, persisted: persisted}) do
+    case apply(module, :handle_message, [proto]) do
+      :ok ->
+        Messages.transition_status(persisted, "success")
+        :ok
+
+      :error ->
+        Messages.transition_status(persisted, "failed_to_process")
+        :error
+    end
+  end
+
+  defp apply_handler(:error), do: :error
 end

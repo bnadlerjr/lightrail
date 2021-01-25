@@ -26,8 +26,8 @@ defmodule Lightrail.MessageTest do
       msg = Proto.new(uuid: uuid, correlation_id: uuid)
       {:ok, encoded, _type} = Message.prepare_for_publishing(msg)
       {:ok, decoded, _type} = BinaryProtobuf.decode(encoded)
-      assert uuid = decoded.uuid
-      assert uuid = decoded.correlation_id
+      assert uuid == decoded.uuid
+      assert uuid == decoded.correlation_id
     end
 
     test "adds a message UUID if one isn't present" do
