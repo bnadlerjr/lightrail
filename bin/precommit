@@ -2,17 +2,22 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+echo
 echo "> Clean _build folder and compile..."
 mix "do" clean, compile
 
+echo
 echo "> Running unit tests..."
 mix test
 
+echo
 echo "> Running credo..."
 mix credo
 
+echo
 echo "> Checking formatting..."
 mix format --check-formatted
 
+echo
 echo "> Running RabbitMQ integration tests..."
 mix test --only rabbit
