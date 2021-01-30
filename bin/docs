@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+echo
+echo "> Generating documentation..."
+mix docs
+mix xref graph --format dot
+dot -Tpng xref_graph.dot -o xref_graph.png
+cp xref_graph.png doc/
+rm xref_graph.dot

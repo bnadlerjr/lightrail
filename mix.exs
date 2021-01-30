@@ -9,7 +9,13 @@ defmodule Lightrail.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      source_url: "https://github.com/flatiron-labs/lightrail",
+      homepage_url: "https://github.com/flatiron-labs/lightrail",
+      docs: [
+        main: "README",
+        extras: ["README.md", "CHANGELOG.md"]
+      ]
     ]
   end
 
@@ -39,7 +45,6 @@ defmodule Lightrail.MixProject do
     ]
   end
 
-  defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 

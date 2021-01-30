@@ -6,6 +6,9 @@ The purpose of the project is two-fold. The main reason is for me (Bob) to learn
 
 This project is _not_ intended to be published to Hex. Install by cloning this repo and running the `bin/setup` script. A `bin/precommit` helper script is available that will compile, test and lint code.
 
+## Architecture Overview
+![Architecture](xref_graph.png)
+
 ## Notes
 
 ### iex Helpers
@@ -81,7 +84,6 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] look into using `ex_rabbit_pool` for connections
 - [ ] setup telemetry for MessageBus.RabbitMQ
 - [ ] how should supervisors work? develop consumer strategy
-- [ ] figure out how auto-generated docs work (also saw references in some places about executable docs)
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
 - [ ] RPC support
 - [ ] setup telemetry for publisher genserver
@@ -101,3 +103,4 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] message persistence for published messages
 - [x] setup script should create DB and run migrations (both envs)
 - [x] message persistence for consumed messages
+- [x] figure out how auto-generated docs work (also saw references in some places about executable docs)
