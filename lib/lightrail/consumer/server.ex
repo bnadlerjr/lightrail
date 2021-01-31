@@ -7,7 +7,7 @@ defmodule Lightrail.Consumer.Server do
   require Logger
   use GenServer
 
-  @message_bus Application.compile_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
+  alias Lightrail.MessageBus.RabbitMQ
 
   @doc false
   @impl GenServer
@@ -16,15 +16,19 @@ defmodule Lightrail.Consumer.Server do
     # https://blog.differentpla.net/blog/2014/11/13/erlang-terminate/
     Process.flag(:trap_exit, true)
 
-    config = apply(module, :init, [])
-    state = Map.merge(initial_state, %{config: config})
+    new_state = %{
+      config: apply(module, :init, []),
+      bus: Application.get_env(:lightrail, :message_bus, RabbitMQ)
+    }
+
+    state = Map.merge(initial_state, new_state)
     {:ok, state, {:continue, :init}}
   end
 
   @doc false
   @impl GenServer
-  def handle_continue(:init, state) do
-    {:ok, state} = @message_bus.setup_consumer(state)
+  def handle_continue(:init, %{bus: bus} = state) do
+    {:ok, state} = bus.setup_consumer(state)
     {:noreply, state}
   end
 
@@ -45,25 +49,25 @@ defmodule Lightrail.Consumer.Server do
   @doc false
   @impl GenServer
   def handle_info({:basic_deliver, payload, attributes}, state) do
-    %{module: module, config: config} = state
+    %{module: module, config: config, bus: bus} = state
     info = %{module: module, exchange: config[:exchange], queue: config[:queue]}
 
     case Lightrail.Consumer.process(payload, attributes, info) do
       :error ->
-        @message_bus.reject(state, attributes)
+        bus.reject(state, attributes)
         {:noreply, :error}
 
       _ ->
-        @message_bus.ack(state, attributes)
+        bus.ack(state, attributes)
         {:noreply, state}
     end
   end
 
   @doc false
   @impl GenServer
-  def terminate(reason, state) do
+  def terminate(reason, %{bus: bus} = state) do
     Logger.info("[#{state.module}]: Terminating consumer, reason: #{inspect(reason)}")
-    @message_bus.cleanup(state)
+    bus.cleanup(state)
     :normal
   end
 end

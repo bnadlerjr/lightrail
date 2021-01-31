@@ -6,6 +6,8 @@ defmodule Lightrail.MessageBus.RabbitMQ do
 
   """
 
+  @behaviour Lightrail.MessageBus
+
   require Logger
   use AMQP
 
@@ -38,8 +40,9 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     Basic.reject(channel, tag, requeue: false)
   end
 
-  def publish(%{channel: channel, config: config}, message, routing_key \\ "") do
+  def publish(%{channel: channel, config: config}, message) do
     Logger.info("Publishing message to #{config[:exchange]}")
+    routing_key = ""
     Basic.publish(channel, config[:exchange], routing_key, message, persistent: true)
   end
 

@@ -19,5 +19,9 @@ echo "> Checking formatting..."
 mix format --check-formatted
 
 echo
-echo "> Running RabbitMQ integration tests..."
-mix test --only rabbit
+echo "> Running dialyzer..."
+mix dialyzer --list-unused-filters
+
+echo
+echo "> Running integration tests..."
+mix test --only integration

@@ -61,8 +61,8 @@ Originally I had a few tests that exercised the publisher and consumer GenServer
 
 * I researched some open source projects and blogs posts to see how others deal with these types of tests. Opinions vary, but I found quite a few that advocate for this approach. It is also the approach they recommend in the "Testing a GenServer" chapter of the book "Testing Elixir".
 
-### Unit Tests vs. RabbitMQ Tests
-All RabbitMQ tests are tagged (`@tag :rabbit`) so that they can be run separately. They are slower than the regular untagged unit tests since they need to assert that messages have been published, queues are empty, etc. By default, running `mix test` will exclude these slow RabbitMQ tests. They can be ran using the `mix test --only rabbit` command or by using the `/bin/precommit` script. The `bin/precommit` script will run them as a last step after the other tests, credo, etc. CI will always run the RabbitMQ tests as well.
+### Unit Tests vs. Integration Tests
+All integration tests are tagged (`@tag :integration`) so that they can be run separately. They are slower than the regular untagged unit tests since they need to assert that messages have been published, queues are empty, etc. By default, running `mix test` will exclude these slow RabbitMQ tests. They can be ran using the `mix test --only integration` command or by using the `/bin/precommit` script. The `bin/precommit` script will run them as a last step after the other tests, credo, etc. CI will always run the integration tests as well.
 
 ### Logs Output During Test Runs
 Originally I had set the log level for the test environment to `:critical` to prevent logs from polluting the test output. This was a mistake. Several errors were occurring that were being hidden, so I set the log level to `:warning`.

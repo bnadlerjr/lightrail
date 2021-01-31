@@ -1,4 +1,4 @@
-defmodule Lightrail.PublisherTest do
+defmodule Lightrail.Integration.PublisherTest do
   # Note that we need to use async: false since tests interact
   # with external Rabbit exchanges, queues, etc.
   use ExUnit.Case, async: false
@@ -10,9 +10,11 @@ defmodule Lightrail.PublisherTest do
   alias Test.Support.Publisher
   alias Test.Support.Repo
 
+  @moduletag :integration
   @timeout _up_to_thirty_seconds = 30_000
 
   setup_all do
+    Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
     {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
 
     # Publishers don't know about queues, only exchanges. If we send a
@@ -29,6 +31,7 @@ defmodule Lightrail.PublisherTest do
       rmq_delete_queue(connection, "lightrail:test:events")
       rmq_delete_exchange(connection, "lightrail:test")
       rmq_close_connection(connection)
+      Application.put_env(:lightrail, :message_bus, Test.Support.FakeRabbitMQ)
     end
 
     on_exit(exit_fn)
@@ -45,7 +48,6 @@ defmodule Lightrail.PublisherTest do
   end
 
   describe "#publish" do
-    @tag :rabbit
     test "successfully publish a message" do
       # Make sure the queue is empty
       Helpers.wait_for_passing(@timeout, fn ->
@@ -69,7 +71,6 @@ defmodule Lightrail.PublisherTest do
       assert 1 == count_after - count_before
     end
 
-    @tag :rabbit
     test "error handling when protobuf can't be encoded" do
       # Make sure the queue is empty
       Helpers.wait_for_passing(@timeout, fn ->

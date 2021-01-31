@@ -5,7 +5,10 @@ IFS=$'\n\t'
 echo
 echo "> Generating documentation..."
 mix docs
-mix xref graph --format dot
+
+# TODO: Figure out why xref won't exclude the test/support folder
+mix xref graph --format dot --exclude "test/support"
+
 dot -Tpng xref_graph.dot -o xref_graph.png
 cp xref_graph.png doc/
 rm xref_graph.dot

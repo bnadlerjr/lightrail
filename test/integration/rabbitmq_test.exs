@@ -6,9 +6,7 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   alias Lightrail.MessageBus.RabbitMQ
 
-  # Even though these are rabbit tests, they're pretty fast since we're not
-  # waiting for messages to arrive in queue, be consumed, etc; holding off
-  # giving them the :rabbit tag for now
+  @moduletag :integration
 
   setup do
     exit_fn = fn ->

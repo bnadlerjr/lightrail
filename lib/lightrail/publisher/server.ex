@@ -7,6 +7,8 @@ defmodule Lightrail.Publisher.Server do
   require Logger
   use GenServer
 
+  alias Lightrail.MessageBus.RabbitMQ
+
   @doc false
   @impl GenServer
   def init(%{module: module} = initial_state) do
@@ -14,8 +16,12 @@ defmodule Lightrail.Publisher.Server do
     # https://blog.differentpla.net/blog/2014/11/13/erlang-terminate/
     Process.flag(:trap_exit, true)
 
-    config = apply(module, :init, [])
-    state = Map.merge(initial_state, %{config: config})
+    new_state = %{
+      config: apply(module, :init, []),
+      bus: Application.get_env(:lightrail, :message_bus, RabbitMQ)
+    }
+
+    state = Map.merge(initial_state, new_state)
     {:ok, state, {:continue, :init}}
   end
 
