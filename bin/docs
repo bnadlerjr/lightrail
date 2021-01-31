@@ -6,8 +6,10 @@ echo
 echo "> Generating documentation..."
 mix docs
 
-# TODO: Figure out why xref won't exclude the test/support folder
+# TODO: Figure out why xref won't exclude the test/support folder. For now, use
+# sed to remove any test/support references from the dot file
 mix xref graph --format dot --exclude "test/support"
+sed -i '' '/test/d' xref_graph.dot
 
 dot -Tpng xref_graph.dot -o xref_graph.png
 cp xref_graph.png doc/
