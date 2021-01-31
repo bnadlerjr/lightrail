@@ -6,6 +6,8 @@ defmodule Lightrail.Messages do
 
   """
 
+  import Ecto.Query
+
   alias Lightrail.Messages.ConsumedMessage
   alias Lightrail.Messages.Errors
   alias Lightrail.Messages.PublishedMessage
@@ -58,14 +60,30 @@ defmodule Lightrail.Messages do
   end
 
   defp do_upsert(params) do
-    %ConsumedMessage{}
-    |> ConsumedMessage.changeset(params)
-    |> @repo.insert(on_conflict: :replace_all, conflict_target: [:uuid, :queue])
+    case find_consumed_message(params.uuid, params.exchange) do
+      nil ->
+        %ConsumedMessage{}
+        |> ConsumedMessage.changeset(params)
+        |> @repo.insert()
+
+      %{status: status} = msg when status == "processing" ->
+        {:skip, msg}
+
+      msg ->
+        msg
+        |> ConsumedMessage.changeset(params)
+        |> @repo.update()
+    end
   end
 
   defp do_transition(message, status) do
     message
     |> ConsumedMessage.transition(status)
     |> @repo.update()
+  end
+
+  defp find_consumed_message(uuid, exchange) do
+    from(m in ConsumedMessage, where: m.uuid == ^uuid, where: m.exchange == ^exchange)
+    |> @repo.one
   end
 end

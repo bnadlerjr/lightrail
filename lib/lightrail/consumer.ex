@@ -132,7 +132,6 @@ defmodule Lightrail.Consumer do
     Map.merge(state, %{payload: payload})
     |> decode_payload()
     |> find_or_create_message()
-    # if message is already being processed, move on
     |> apply_handler()
   rescue
     reason ->
@@ -174,6 +173,9 @@ defmodule Lightrail.Consumer do
       {:ok, persisted} ->
         Map.merge(info, %{persisted: persisted})
 
+      {:skip, _} ->
+        {:skip, info}
+
       {:error, error} ->
         Logger.error(
           "[#{module}]: An error occurred while " <>
@@ -196,6 +198,11 @@ defmodule Lightrail.Consumer do
         Messages.transition_status(persisted, "failed_to_process")
         :error
     end
+  end
+
+  defp apply_handler({:skip, %{module: module}}) do
+    Logger.info("[#{module}]: Message is already being processed, skipping")
+    :ok
   end
 
   defp apply_handler(:error), do: :error

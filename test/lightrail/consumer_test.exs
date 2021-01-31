@@ -57,6 +57,48 @@ defmodule Lightrail.ConsumerTest do
       assert "success" == persisted.status
     end
 
+    test "message is skipped if it's already being processed", context do
+      proto = Proto.new(uuid: UUID.uuid4(), info: "this should be skipped")
+      {:ok, encoded, type} = Message.prepare_for_publishing(proto)
+
+      insert_consumed_message!(
+        proto,
+        encoded,
+        type,
+        context.exchange,
+        context.queue,
+        "processing"
+      )
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        :ok = Consumer.process(encoded, %{}, context)
+      end
+
+      persisted = get_consumed_message!(proto.uuid)
+      assert "processing" == persisted.status
+    end
+
+    test "re-process message if it exists and is not being processed", context do
+      proto = Proto.new(uuid: UUID.uuid4(), info: "this should be acked")
+      {:ok, encoded, type} = Message.prepare_for_publishing(proto)
+
+      insert_consumed_message!(
+        proto,
+        encoded,
+        type,
+        context.exchange,
+        context.queue,
+        "failed_to_process"
+      )
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        :ok = Consumer.process(encoded, %{}, context)
+      end
+
+      persisted = get_consumed_message!(proto.uuid)
+      assert "success" == persisted.status
+    end
+
     test "message could not be decoded", context do
       assert_difference row_count("lightrail_consumed_messages"), count: 0 do
         :error = Consumer.process("invalid", %{}, context)

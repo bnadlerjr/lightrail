@@ -49,4 +49,21 @@ defmodule Test.Support.Helpers do
   def get_consumed_message!(uuid, queue \\ "lightrail:test:event") do
     Repo.get_by!(ConsumedMessage, %{uuid: uuid, queue: queue})
   end
+
+  def insert_consumed_message!(proto, encoded, type, exchange, queue, status) do
+    params = %{
+      correlation_id: proto.correlation_id,
+      encoded_message: encoded,
+      exchange: exchange,
+      message_type: type,
+      queue: queue,
+      status: status,
+      user_uuid: proto.user_uuid,
+      uuid: proto.uuid
+    }
+
+    %ConsumedMessage{}
+    |> ConsumedMessage.changeset(params)
+    |> Repo.insert!()
+  end
 end

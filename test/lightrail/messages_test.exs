@@ -1,6 +1,8 @@
 defmodule Lightrail.MessagesTest do
   use ExUnit.Case, async: true
 
+  import Test.Support.Helpers
+
   alias Ecto.Adapters.SQL.Sandbox
   alias Lightrail.MessageFormat.BinaryProtobuf
   alias Lightrail.Messages
@@ -82,10 +84,39 @@ defmodule Lightrail.MessagesTest do
       assert "Encoded message can't be blank, Message type can't be blank" == msg
     end
 
-    test "does an upsert", %{valid_args: args} do
-      {:ok, msg_one} = Messages.upsert(args)
-      {:ok, msg_two} = Messages.upsert(args)
-      assert msg_one == msg_two
+    test "does an upsert when the status is not 'processing'", %{valid_args: args} do
+      msg_one =
+        insert_consumed_message!(
+          args.protobuf,
+          args.encoded,
+          args.type,
+          args.exchange,
+          args.queue,
+          "failed_to_process"
+        )
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        {:ok, msg_two} = Messages.upsert(args)
+      end
+
+      assert msg_one.uuid == msg_two.uuid
+      assert "processing" == msg_two.status
+    end
+
+    test "skipping a message that is already being processed", %{valid_args: args} do
+      msg_one =
+        insert_consumed_message!(
+          args.protobuf,
+          args.encoded,
+          args.type,
+          args.exchange,
+          args.queue,
+          "processing"
+        )
+
+      assert_difference row_count("lightrail_consumed_messages"), count: 0 do
+        assert {:skip, msg_one} == Messages.upsert(args)
+      end
     end
   end
 
