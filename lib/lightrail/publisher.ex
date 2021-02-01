@@ -151,9 +151,9 @@ defmodule Lightrail.Publisher do
 
   defp persist({:error, error}), do: {:error, error}
 
-  defp log_details({:ok, %{type: type, exchange: exchange} = state}) do
+  defp log_details({:ok, %{type: type, exchange: exchange}}) do
     Logger.info("[#{__MODULE__}]: Published a #{inspect(type)} message to #{inspect(exchange)}")
-    {:ok, state}
+    :ok
   end
 
   defp log_details({:error, error}) do

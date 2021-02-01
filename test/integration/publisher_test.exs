@@ -59,7 +59,7 @@ defmodule Lightrail.Integration.PublisherTest do
 
       # Publish a message
       proto = Message.new(uuid: UUID.uuid4())
-      {:ok, _} = Publisher.publish_message(proto)
+      :ok = Publisher.publish_message(proto)
 
       # Make sure it arrived in the queue
       Helpers.wait_for_passing(@timeout, fn ->

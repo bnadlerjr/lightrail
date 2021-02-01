@@ -15,7 +15,7 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    Exchange.fanout(channel, config[:exchange], options())
+    :ok = Exchange.fanout(channel, config[:exchange], options())
 
     {:ok, Map.merge(state, %{channel: channel, connection: connection})}
   end
@@ -24,20 +24,20 @@ defmodule Lightrail.MessageBus.RabbitMQ do
     {:ok, connection} = connect(state)
     {:ok, channel} = Channel.open(connection)
 
-    Exchange.fanout(channel, config[:exchange], options())
-    Queue.declare(channel, config[:queue], options())
-    Queue.bind(channel, config[:queue], config[:exchange])
-    Basic.consume(channel, config[:queue])
+    :ok = Exchange.fanout(channel, config[:exchange], options())
+    {:ok, _} = Queue.declare(channel, config[:queue], options())
+    :ok = Queue.bind(channel, config[:queue], config[:exchange])
+    {:ok, _} = Basic.consume(channel, config[:queue])
 
     {:ok, Map.merge(state, %{channel: channel, connection: connection})}
   end
 
   def ack(%{channel: channel}, %{delivery_tag: tag}) do
-    Basic.ack(channel, tag)
+    :ok = Basic.ack(channel, tag)
   end
 
   def reject(%{channel: channel}, %{delivery_tag: tag}) do
-    Basic.reject(channel, tag, requeue: false)
+    :ok = Basic.reject(channel, tag, requeue: false)
   end
 
   def publish(%{channel: channel, config: config}, message) do
@@ -47,8 +47,8 @@ defmodule Lightrail.MessageBus.RabbitMQ do
   end
 
   def cleanup(%{channel: channel, connection: connection} = state) do
-    if Process.alive?(channel.pid), do: Channel.close(channel)
-    if Process.alive?(channel.pid), do: Connection.close(connection)
+    if Process.alive?(channel.pid), do: :ok = Channel.close(channel)
+    if Process.alive?(channel.pid), do: :ok = Connection.close(connection)
     {:ok, Map.drop(state, [:connection, :channel])}
   end
 

@@ -12,6 +12,7 @@ defmodule Lightrail.MixProject do
       aliases: aliases(),
       source_url: "https://github.com/flatiron-labs/lightrail",
       homepage_url: "https://github.com/flatiron-labs/lightrail",
+      dialyzer: [flags: ["-Wunmatched_returns", :error_handling, :underspecs]],
       docs: [
         main: "README",
         extras: ["README.md", "CHANGELOG.md"]
