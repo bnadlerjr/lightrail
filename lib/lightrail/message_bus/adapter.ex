@@ -1,4 +1,4 @@
-defmodule Lightrail.MessageBus.RabbitMQ do
+defmodule Lightrail.MessageBus.Adapter do
   @moduledoc """
   RabbitMQ implementation of the message bus.
 

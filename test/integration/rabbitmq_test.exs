@@ -9,7 +9,7 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
     setup do
       config = %{exchange: "lightrail:test"}
       state = %{module: __MODULE__, config: config}
-      {:ok, new_state} = RabbitMQ.setup_publisher(state)
+      {:ok, new_state} = Adapter.setup_publisher(state)
 
       %{new_state: new_state}
     end
@@ -33,7 +33,7 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
       }
 
       state = %{module: __MODULE__, config: config}
-      {:ok, new_state} = RabbitMQ.setup_consumer(state)
+      {:ok, new_state} = Adapter.setup_consumer(state)
 
       %{new_state: new_state}
     end
@@ -82,7 +82,7 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
         connection: connection
       }
 
-      {:ok, new_state} = RabbitMQ.cleanup(state)
+      {:ok, new_state} = Adapter.cleanup(state)
 
       assert new_state == %{module: __MODULE__}
       wait_for_passing(_2_seconds = 3000, fn ->
@@ -103,14 +103,14 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
         connection: connection
       }
 
-      {:ok, new_state} = RabbitMQ.cleanup(state)
+      {:ok, new_state} = Adapter.cleanup(state)
 
       assert new_state == %{module: __MODULE__}
     end
 
     test "returns the unaltered state if channel does not exist" do
       state = %{module: __MODULE__}
-      {:ok, new_state} = RabbitMQ.cleanup(state)
+      {:ok, new_state} = Adapter.cleanup(state)
       assert new_state == state
     end
   end

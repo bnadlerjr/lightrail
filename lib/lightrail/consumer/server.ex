@@ -7,7 +7,7 @@ defmodule Lightrail.Consumer.Server do
   require Logger
   use GenServer
 
-  alias Lightrail.MessageBus.RabbitMQ
+  alias Lightrail.MessageBus.Adapter
 
   @doc false
   @impl GenServer
@@ -18,7 +18,7 @@ defmodule Lightrail.Consumer.Server do
 
     new_state = %{
       config: apply(module, :init, []),
-      bus: Application.get_env(:lightrail, :message_bus, RabbitMQ)
+      bus: Application.get_env(:lightrail, :message_bus, Adapter)
     }
 
     state = Map.merge(initial_state, new_state)

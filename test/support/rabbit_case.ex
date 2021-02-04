@@ -13,14 +13,14 @@ defmodule Test.Support.RabbitCase do
       import Test.Support.Helpers
       import Test.Support.RabbitCase
 
-      alias Lightrail.MessageBus.RabbitMQ
+      alias Lightrail.MessageBus.Adapter
     end
   end
 
   setup context do
     # We need to stop and restart app w/ a real RabbitMQ
     :ok = Application.stop(:lightrail)
-    Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
+    Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.Adapter)
     :ok = Application.start(:lightrail)
 
     {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
