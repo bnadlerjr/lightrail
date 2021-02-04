@@ -7,7 +7,7 @@ defmodule Lightrail.Consumer.Server do
   require Logger
   use GenServer
 
-  alias Lightrail.MessageBus.Adapter
+  alias Lightrail.RabbitMQ.Adapter
 
   @doc false
   @impl GenServer
