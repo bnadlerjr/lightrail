@@ -1,34 +1,9 @@
 defmodule Lightrail.MessageBus.RabbitmqTest do
   # Note that we need to use async: false since tests interact
   # with external Rabbit exchanges, queues, etc.
-  use ExUnit.Case, async: false
-  use Test.Support.RabbitCase
-
-  import Test.Support.Helpers
-
-  alias Lightrail.MessageBus.RabbitMQ
+  use Test.Support.RabbitCase, async: false
 
   @moduletag :integration
-
-  setup do
-    Application.stop(:lightrail)
-    Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
-    Application.start(:lightrail)
-
-    {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
-
-    exit_fn = fn ->
-      rmq_delete_queue(connection, "lightrail:test:events")
-      rmq_delete_exchange(connection, "lightrail:test")
-      rmq_close_connection(connection)
-      Application.stop(:lightrail)
-      Application.put_env(:lightrail, :message_bus, Test.Support.FakeRabbitMQ)
-      Application.start(:lightrail)
-    end
-
-    on_exit(exit_fn)
-    %{connection: connection}
-  end
 
   describe "setting up a publisher" do
     setup do
@@ -98,8 +73,8 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   describe "cleanup" do
     test "closes channel" do
-      {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
-      {:ok, channel} = rmq_open_channel(connection)
+      {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
+      {:ok, channel} = open_channel(connection)
 
       state = %{
         module: __MODULE__,
@@ -116,11 +91,11 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
     end
 
     test "doesn't try to close a channel that's already closed" do
-      {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
-      {:ok, channel} = rmq_open_channel(connection)
+      {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
+      {:ok, channel} = open_channel(connection)
 
-      rmq_close_channel(channel)
-      rmq_close_connection(connection)
+      close_channel(channel)
+      close_connection(connection)
 
       state = %{
         module: __MODULE__,

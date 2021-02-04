@@ -18,7 +18,7 @@ defmodule Test.Support.Helpers do
 
   ```
   wait_for_passing(_2_seconds = 2000, fn ->
-    assert 1 == rmq_queue_count("lightrail_example_queue")
+    assert 1 == queue_count("lightrail_example_queue")
   end)
   ```
 

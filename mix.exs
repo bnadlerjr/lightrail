@@ -12,7 +12,10 @@ defmodule Lightrail.MixProject do
       aliases: aliases(),
       source_url: "https://github.com/flatiron-labs/lightrail",
       homepage_url: "https://github.com/flatiron-labs/lightrail",
-      dialyzer: [flags: ["-Wunmatched_returns", :error_handling, :underspecs]],
+      dialyzer: [
+        flags: ["-Wunmatched_returns", :error_handling, :underspecs],
+        plt_add_apps: [:ex_unit]
+      ],
       docs: [
         main: "README",
         extras: ["README.md", "CHANGELOG.md"]
@@ -22,7 +25,7 @@ defmodule Lightrail.MixProject do
 
   def application do
     [
-      extra_applications: [:lager, :logger],
+      extra_applications: [:lager, :logger, :inets],
       mod: {Lightrail.Application, []}
     ]
   end
