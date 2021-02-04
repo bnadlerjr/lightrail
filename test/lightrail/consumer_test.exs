@@ -1,13 +1,11 @@
 defmodule Lightrail.ConsumerTest do
-  use ExUnit.Case, async: true
+  use Test.Support.DataCase, async: true
 
   import Test.Support.Helpers
 
-  alias Ecto.Adapters.SQL.Sandbox
   alias Lightrail.Consumer
   alias Lightrail.Message
   alias Test.Support.Message, as: Proto
-  alias Test.Support.Repo
 
   defmodule Subject do
     @behaviour Lightrail.Consumer
@@ -33,11 +31,6 @@ defmodule Lightrail.ConsumerTest do
         _ -> raise "boom"
       end
     end
-  end
-
-  setup do
-    :ok = Sandbox.checkout(Repo)
-    Sandbox.mode(Repo, {:shared, self()})
   end
 
   describe "#process" do

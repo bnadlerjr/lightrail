@@ -17,7 +17,7 @@ defmodule Test.Support.RabbitCase do
     end
   end
 
-  setup do
+  setup context do
     # We need to stop and restart app w/ a real RabbitMQ
     :ok = Application.stop(:lightrail)
     Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
@@ -45,7 +45,7 @@ defmodule Test.Support.RabbitCase do
     end
 
     on_exit(exit_fn)
-    %{connection: connection}
+    Map.put(context, :connection, connection)
   end
 
   @doc """

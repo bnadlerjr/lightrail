@@ -2,19 +2,18 @@ defmodule Lightrail.Integration.PublisherTest do
   # Note that we need to use async: false since tests interact
   # with external Rabbit exchanges, queues, etc.
   use Test.Support.RabbitCase, async: false
+  use Test.Support.DataCase, async: false
 
-  alias Ecto.Adapters.SQL.Sandbox
   alias Test.Support.Helpers
   alias Test.Support.Message
   alias Test.Support.Publisher
-  alias Test.Support.Repo
 
   @moduletag :integration
   @timeout _up_to_thirty_seconds = 30_000
 
   setup do
     start_supervised!(%{id: Publisher, start: {Publisher, :start_link, []}})
-    :ok = Sandbox.checkout(Repo)
+    :ok
   end
 
   describe "#publish" do
@@ -25,7 +24,7 @@ defmodule Lightrail.Integration.PublisherTest do
       end)
 
       # Get the current message count
-      count_before = Repo.aggregate("lightrail_published_messages", :count, :uuid)
+      count_before = row_count("lightrail_published_messages")
 
       # Publish a message
       proto = Message.new(uuid: UUID.uuid4())
@@ -37,7 +36,7 @@ defmodule Lightrail.Integration.PublisherTest do
       end)
 
       # Make sure the message was persisted
-      count_after = Repo.aggregate("lightrail_published_messages", :count, :uuid)
+      count_after = row_count("lightrail_published_messages")
       assert 1 == count_after - count_before
     end
 
@@ -61,7 +60,7 @@ defmodule Lightrail.Integration.PublisherTest do
       end)
 
       # Make sure the message was not persisted
-      assert 0 == Repo.aggregate("lightrail_published_messages", :count, :uuid)
+      assert 0 == row_count("lightrail_published_messages")
     end
   end
 end

@@ -4,9 +4,6 @@ defmodule Test.Support.Helpers do
 
   """
 
-  alias Lightrail.Messages.ConsumedMessage
-  alias Test.Support.Repo
-
   @doc """
   Repeatedly executes `fun` until it either returns `true` or
   reaches `timeout`.
@@ -40,30 +37,5 @@ defmodule Test.Support.Helpers do
       after_ = unquote(expr)
       assert unquote(count) == after_ - before
     end
-  end
-
-  def row_count(table, field \\ :uuid) do
-    Repo.aggregate(table, :count, field)
-  end
-
-  def get_consumed_message!(uuid, queue \\ "lightrail:test:event") do
-    Repo.get_by!(ConsumedMessage, %{uuid: uuid, queue: queue})
-  end
-
-  def insert_consumed_message!(proto, encoded, type, exchange, queue, status) do
-    params = %{
-      correlation_id: proto.correlation_id,
-      encoded_message: encoded,
-      exchange: exchange,
-      message_type: type,
-      queue: queue,
-      status: status,
-      user_uuid: proto.user_uuid,
-      uuid: proto.uuid
-    }
-
-    %ConsumedMessage{}
-    |> ConsumedMessage.changeset(params)
-    |> Repo.insert!()
   end
 end

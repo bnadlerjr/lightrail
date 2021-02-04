@@ -1,19 +1,12 @@
 defmodule Lightrail.MessagesTest do
-  use ExUnit.Case, async: true
+  use Test.Support.DataCase, async: true
 
   import Test.Support.Helpers
 
-  alias Ecto.Adapters.SQL.Sandbox
   alias Lightrail.MessageFormat.BinaryProtobuf
   alias Lightrail.Messages
   alias Lightrail.Messages.ConsumedMessage
-  alias Lightrail.Messages.PublishedMessage
   alias Test.Support.Message, as: Proto
-  alias Test.Support.Repo
-
-  setup do
-    :ok = Sandbox.checkout(Repo)
-  end
 
   describe "#insert" do
     setup do
@@ -32,7 +25,7 @@ defmodule Lightrail.MessagesTest do
 
     test "valid message is persisted", %{valid_args: args} do
       {:ok, msg} = Messages.insert(args)
-      persisted = Repo.get!(PublishedMessage, msg.uuid)
+      persisted = get_published_message!(msg.uuid)
       assert args.encoded == persisted.encoded_message
       assert "lightrail:test" == persisted.exchange
       assert args.type == persisted.message_type
@@ -70,7 +63,7 @@ defmodule Lightrail.MessagesTest do
 
     test "valid message is persisted", %{valid_args: args} do
       {:ok, msg} = Messages.upsert(args)
-      persisted = Repo.get_by!(ConsumedMessage, %{uuid: msg.uuid, queue: msg.queue})
+      persisted = get_consumed_message!(msg.uuid)
       assert args.encoded == persisted.encoded_message
       assert "lightrail:test" == persisted.exchange
       assert "lightrail:test:event" == persisted.queue
@@ -130,13 +123,13 @@ defmodule Lightrail.MessagesTest do
         uuid: UUID.uuid4()
       }
 
-      Repo.insert!(msg)
+      insert_consumed_message!(msg)
       %{message: msg}
     end
 
     test "successfully updates the status", %{message: msg} do
       {:ok, _} = Messages.transition_status(msg, "success")
-      persisted = Repo.get_by!(ConsumedMessage, %{uuid: msg.uuid, queue: msg.queue})
+      persisted = get_consumed_message!(msg.uuid)
       assert "success" == persisted.status
     end
 
