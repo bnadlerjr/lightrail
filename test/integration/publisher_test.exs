@@ -14,7 +14,9 @@ defmodule Lightrail.Integration.PublisherTest do
   @timeout _up_to_thirty_seconds = 30_000
 
   setup_all do
+    Application.stop(:lightrail)
     Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
+    Application.start(:lightrail)
     {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
 
     # Publishers don't know about queues, only exchanges. If we send a
@@ -31,7 +33,9 @@ defmodule Lightrail.Integration.PublisherTest do
       rmq_delete_queue(connection, "lightrail:test:events")
       rmq_delete_exchange(connection, "lightrail:test")
       rmq_close_connection(connection)
+      Application.stop(:lightrail)
       Application.put_env(:lightrail, :message_bus, Test.Support.FakeRabbitMQ)
+      Application.start(:lightrail)
     end
 
     on_exit(exit_fn)

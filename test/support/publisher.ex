@@ -13,8 +13,7 @@ defmodule Test.Support.Publisher do
   @impl Lightrail.Publisher
   def init() do
     [
-      exchange: "lightrail:test",
-      connection: "amqp://guest:guest@localhost:5672"
+      exchange: "lightrail:test"
     ]
   end
 end

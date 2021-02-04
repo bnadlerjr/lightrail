@@ -4,7 +4,7 @@ defmodule Lightrail.Publisher do
 
   * allows publisher configuration to be set
 
-  * starts a `Lightrail.Publisher.Server` process that tracks connection
+  * starts a `Lightrail.Publisher.Server` process that tracks channel
     information state
 
   * provides a `publish` function that takes a Protobuf, encodes it, and
@@ -28,8 +28,7 @@ defmodule Lightrail.Publisher do
     @impl Lightrail.Publisher
     def init() do
       [
-        exchange: "lightrail_example_exchange",
-        connection: "amqp://guest:guest@localhost:5672"
+        exchange: "lightrail_example_exchange"
       ]
     end
   end
@@ -47,10 +46,6 @@ defmodule Lightrail.Publisher do
 
   ## Required Values
 
-  `connection` - Message bus connection information. If using RabbitMQ as a
-                 message bus, this is the connection URI
-                 (i.e. `amqp://guest:guest@localhost:5672`).
-
   `exchange` - The name of the exchange used to publish messages.
 
   ## Examples
@@ -59,14 +54,13 @@ defmodule Lightrail.Publisher do
   @impl Lightrail.Publisher
   def init() do
     [
-      exchange: "example",
-      connection: "amqp://guest:guest@localhost:5672"
+      exchange: "example"
     ]
   end
   ```
 
   """
-  @callback init() :: [connection: String.t(), exchange: String.t()]
+  @callback init() :: [exchange: String.t()]
 
   @doc """
   Starts the `Lightrail.Publisher` process with the given callback module

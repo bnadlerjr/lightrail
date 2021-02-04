@@ -44,4 +44,16 @@ defmodule Lightrail.MessageBus do
 
   """
   @callback cleanup(state :: map) :: {:ok, map}
+
+  @doc """
+  Open a new message bus connection.
+
+  """
+  @callback connect(uri :: binary) :: {:ok, term}
+
+  @doc """
+  Close the message bus connection.
+
+  """
+  @callback disconnect(connection :: map) :: :ok
 end

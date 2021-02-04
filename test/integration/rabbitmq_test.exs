@@ -4,28 +4,35 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
   use ExUnit.Case, async: false
   use Test.Support.RabbitCase
 
+  import Test.Support.Helpers
+
   alias Lightrail.MessageBus.RabbitMQ
 
   @moduletag :integration
 
   setup do
+    Application.stop(:lightrail)
+    Application.put_env(:lightrail, :message_bus, Lightrail.MessageBus.RabbitMQ)
+    Application.start(:lightrail)
+
+    {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
+
     exit_fn = fn ->
-      {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
       rmq_delete_queue(connection, "lightrail:test:events")
       rmq_delete_exchange(connection, "lightrail:test")
       rmq_close_connection(connection)
+      Application.stop(:lightrail)
+      Application.put_env(:lightrail, :message_bus, Test.Support.FakeRabbitMQ)
+      Application.start(:lightrail)
     end
 
     on_exit(exit_fn)
+    %{connection: connection}
   end
 
   describe "setting up a publisher" do
     setup do
-      config = %{
-        connection: "amqp://guest:guest@localhost:5672",
-        exchange: "lightrail:test"
-      }
-
+      config = %{exchange: "lightrail:test"}
       state = %{module: __MODULE__, config: config}
       {:ok, new_state} = RabbitMQ.setup_publisher(state)
 
@@ -33,7 +40,6 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
     end
 
     test "state is updated", %{new_state: new_state} do
-      assert new_state.connection
       assert new_state.channel
     end
 
@@ -47,7 +53,6 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
   describe "setting up a consumer" do
     setup do
       config = %{
-        connection: "amqp://guest:guest@localhost:5672",
         exchange: "lightrail:test",
         queue: "lightrail:test:events"
       }
@@ -59,7 +64,6 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
     end
 
     test "state is updated", %{new_state: new_state} do
-      assert new_state.connection
       assert new_state.channel
     end
 
@@ -88,12 +92,12 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   test "publish, ack, reject" do
     # No need to test these directly since they're already tested through
-    # the main publisher an consumer tests.
+    # the main publisher and consumer tests.
     assert true
   end
 
   describe "cleanup" do
-    test "closes both channel and connection" do
+    test "closes channel" do
       {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
       {:ok, channel} = rmq_open_channel(connection)
 
@@ -106,11 +110,12 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
       {:ok, new_state} = RabbitMQ.cleanup(state)
 
       assert new_state == %{module: __MODULE__}
-      refute Process.alive?(connection.pid)
-      refute Process.alive?(channel.pid)
+      wait_for_passing(_2_seconds = 3000, fn ->
+        refute Process.alive?(channel.pid)
+      end)
     end
 
-    test "doesn't try to close a channel or connection that's already closed" do
+    test "doesn't try to close a channel that's already closed" do
       {:ok, connection} = rmq_open_connection("amqp://guest:guest@localhost:5672")
       {:ok, channel} = rmq_open_channel(connection)
 
@@ -128,7 +133,7 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
       assert new_state == %{module: __MODULE__}
     end
 
-    test "returns the unaltered state if connection and channel do not exist" do
+    test "returns the unaltered state if channel does not exist" do
       state = %{module: __MODULE__}
       {:ok, new_state} = RabbitMQ.cleanup(state)
       assert new_state == state

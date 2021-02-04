@@ -40,4 +40,10 @@ defmodule Test.Support.FakeRabbitMQ do
 
   @impl Lightrail.MessageBus
   def cleanup(state), do: {:ok, state}
+
+  @impl Lightrail.MessageBus
+  def connect(_uri), do: {:ok, nil}
+
+  @impl Lightrail.MessageBus
+  def disconnect(_), do: :ok
 end

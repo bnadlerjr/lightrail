@@ -4,7 +4,7 @@ defmodule Lightrail.Consumer do
 
   * allows consumer configuration to be set
 
-  * starts a `Lightrail.Consumer.Server` process that tracks connection
+  * starts a `Lightrail.Consumer.Server` process that tracks channel
     information state
 
   * provides a `handle_message` callback that receives a decoded
@@ -24,8 +24,7 @@ defmodule Lightrail.Consumer do
     def init() do
       [
         exchange: "lightrail_example_exchange",
-        queue: "lightrail_example_queue",
-        connection: "amqp://guest:guest@localhost:5672"
+        queue: "lightrail_example_queue"
       ]
     end
 
@@ -48,12 +47,7 @@ defmodule Lightrail.Consumer do
 
   ## Required Values
 
-  `connection` - Message bus connection information. If using RabbitMQ as a
-                 message bus, this is the connection URI
-                 (i.e. `amqp://guest:guest@localhost:5672`).
-
   `exchange` - The name of the exchange to consume.
-
   `queue` - The name of the queue to consume.
 
   ## Examples
@@ -63,14 +57,13 @@ defmodule Lightrail.Consumer do
   def init() do
     [
       exchange: "example",
-      queue: "my_queue",
-      connection: "amqp://guest:guest@localhost:5672"
+      queue: "my_queue"
     ]
   end
   ```
 
   """
-  @callback init() :: [connection: String.t(), exchange: String.t(), queue: String.t()]
+  @callback init() :: [exchange: String.t(), queue: String.t()]
 
   @doc """
   Message handler. This callback will be called when a message is consumed. If

@@ -11,4 +11,5 @@ config :lightrail, Test.Support.Repo,
 
 config :lightrail,
   ecto_repos: [Test.Support.Repo],
+  message_bus: Lightrail.MessageBus.RabbitMQ,
   repo: Test.Support.Repo

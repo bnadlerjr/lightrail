@@ -82,9 +82,7 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] row locking for consumed messages to prevent concurrent processing
 - [ ] remove specs from non-public API modules
 - [ ] mix task for generating migrations
-- [ ] look into using `ex_rabbit_pool` for connections
 - [ ] setup telemetry for MessageBus.RabbitMQ
-- [ ] how should supervisors work? develop consumer strategy
 - [ ] command messages (both publishing & consuming); how should they work? when should they be used?
 - [ ] RPC support
 - [ ] setup telemetry for publisher genserver
@@ -105,3 +103,5 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] setup script should create DB and run migrations (both envs)
 - [x] message persistence for consumed messages
 - [x] figure out how auto-generated docs work (also saw references in some places about executable docs)
+- [x] look into using `ex_rabbit_pool` for connections
+- [x] how should supervisors work? develop consumer strategy
