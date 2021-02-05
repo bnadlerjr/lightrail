@@ -5,10 +5,11 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   @moduletag :integration
 
+  alias Lightrail.MessageBus
+
   describe "setting up a publisher" do
     setup do
-      config = %{exchange: "lightrail:test"}
-      state = %{module: __MODULE__, config: config}
+      state = %MessageBus{exchange: "lightrail:test"}
       {:ok, new_state} = Adapter.setup_publisher(state)
 
       %{new_state: new_state}
@@ -27,14 +28,8 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   describe "setting up a consumer" do
     setup do
-      config = %{
-        exchange: "lightrail:test",
-        queue: "lightrail:test:events"
-      }
-
-      state = %{module: __MODULE__, config: config}
+      state = %MessageBus{exchange: "lightrail:test", queue: "lightrail:test:events"}
       {:ok, new_state} = Adapter.setup_consumer(state)
-
       %{new_state: new_state}
     end
 

@@ -11,23 +11,24 @@ defmodule Lightrail.RabbitMQ.Adapter do
   require Logger
   use AMQP
 
+  alias Lightrail.MessageBus
   alias Lightrail.RabbitMQ.Connection, as: BusConnection
 
-  def setup_publisher(%{config: config} = state) do
+  def setup_publisher(%MessageBus{exchange: exchange} = state) do
     {:ok, connection} = BusConnection.get(:publisher_connection)
     {:ok, channel} = Channel.open(connection)
-    :ok = Exchange.fanout(channel, config[:exchange], options())
+    :ok = Exchange.fanout(channel, exchange, options())
     {:ok, Map.merge(state, %{channel: channel})}
   end
 
-  def setup_consumer(%{config: config} = state) do
+  def setup_consumer(%MessageBus{exchange: exchange, queue: queue} = state) do
     {:ok, connection} = BusConnection.get(:consumer_connection)
     {:ok, channel} = Channel.open(connection)
 
-    :ok = Exchange.fanout(channel, config[:exchange], options())
-    {:ok, _} = Queue.declare(channel, config[:queue], options())
-    :ok = Queue.bind(channel, config[:queue], config[:exchange])
-    {:ok, _} = Basic.consume(channel, config[:queue])
+    :ok = Exchange.fanout(channel, exchange, options())
+    {:ok, _} = Queue.declare(channel, queue, options())
+    :ok = Queue.bind(channel, queue, exchange)
+    {:ok, _} = Basic.consume(channel, queue)
 
     {:ok, Map.merge(state, %{channel: channel})}
   end
@@ -59,13 +60,13 @@ defmodule Lightrail.RabbitMQ.Adapter do
     :ok = Basic.reject(channel, tag, requeue: false)
   end
 
-  def publish(%{channel: channel, config: config}, message) do
-    Logger.info("Publishing message to #{config[:exchange]}")
+  def publish(%{channel: channel, exchange: exchange}, message) do
+    Logger.info("Publishing message to #{exchange}")
     routing_key = ""
-    Basic.publish(channel, config[:exchange], routing_key, message, persistent: true)
+    Basic.publish(channel, exchange, routing_key, message, persistent: true)
   end
 
-  def cleanup(%{channel: channel} = state) do
+  def cleanup(%{channel: channel} = state) when not is_nil(channel) do
     if Process.alive?(channel.pid), do: :ok = Channel.close(channel)
     {:ok, Map.drop(state, [:connection, :channel])}
   end

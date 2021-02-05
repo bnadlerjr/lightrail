@@ -7,7 +7,7 @@ defmodule Lightrail.Consumer.Server do
   require Logger
   use GenServer
 
-  alias Lightrail.RabbitMQ.Adapter
+  alias Lightrail.MessageBus
 
   @doc false
   @impl GenServer
@@ -16,9 +16,11 @@ defmodule Lightrail.Consumer.Server do
     # https://blog.differentpla.net/blog/2014/11/13/erlang-terminate/
     Process.flag(:trap_exit, true)
 
+    config = apply(module, :init, [])
+
     new_state = %{
-      config: apply(module, :init, []),
-      bus: Application.get_env(:lightrail, :message_bus, Adapter)
+      adapter: Application.get_env(:lightrail, :message_bus),
+      bus: %MessageBus{exchange: config[:exchange], queue: config[:queue]}
     }
 
     state = Map.merge(initial_state, new_state)
@@ -27,9 +29,9 @@ defmodule Lightrail.Consumer.Server do
 
   @doc false
   @impl GenServer
-  def handle_continue(:init, %{bus: bus} = state) do
-    {:ok, state} = bus.setup_consumer(state)
-    {:noreply, state}
+  def handle_continue(:init, %{adapter: adapter, bus: bus} = state) do
+    {:ok, bus_state} = adapter.setup_consumer(bus)
+    {:noreply, Map.put(state, :bus, bus_state)}
   end
 
   @doc false
@@ -49,25 +51,25 @@ defmodule Lightrail.Consumer.Server do
   @doc false
   @impl GenServer
   def handle_info({:basic_deliver, payload, attributes}, state) do
-    %{module: module, config: config, bus: bus} = state
-    info = %{module: module, exchange: config[:exchange], queue: config[:queue]}
+    %{module: module, bus: bus, adapter: adapter} = state
+    info = %{module: module, exchange: bus.exchange, queue: bus.queue}
 
     case Lightrail.Consumer.process(payload, attributes, info) do
       :error ->
-        bus.reject(state, attributes)
+        adapter.reject(bus, attributes)
         {:noreply, :error}
 
       _ ->
-        bus.ack(state, attributes)
+        adapter.ack(bus, attributes)
         {:noreply, state}
     end
   end
 
   @doc false
   @impl GenServer
-  def terminate(reason, %{bus: bus} = state) do
+  def terminate(reason, %{adapter: adapter, bus: bus} = state) do
     Logger.info("[#{state.module}]: Terminating consumer, reason: #{inspect(reason)}")
-    bus.cleanup(state)
+    adapter.cleanup(bus)
     :normal
   end
 end

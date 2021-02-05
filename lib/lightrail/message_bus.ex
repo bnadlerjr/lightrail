@@ -2,48 +2,48 @@ defmodule Lightrail.MessageBus do
   @moduledoc """
   Defines message bus behaviour.
 
-  All functions defined by this behaviour take a configuration map as
-  their first argument.
   """
+
+  defstruct [:channel, :exchange, :queue]
 
   @doc """
-  Takes configuration map and sets up any needed infrastructure for the
-  message bus to publish a message. Returns the updated configuration map.
+  Takes configuration struct and sets up any needed infrastructure for the
+  message bus to publish a message. Returns the updated configuration struct.
 
   """
-  @callback setup_publisher(state :: map) :: {:ok, map}
+  @callback setup_publisher(state :: %__MODULE__{}) :: {:ok, %__MODULE__{}}
 
   @doc """
-  Takes configuration map and sets up any needed infrastructure for the
-  message bus to consume a message. Returns the updated configuration map.
+  Takes configuration struct and sets up any needed infrastructure for the
+  message bus to consume a message. Returns the updated configuration struct.
 
   """
-  @callback setup_consumer(state :: map) :: {:ok, map}
+  @callback setup_consumer(state :: %__MODULE__{}) :: {:ok, %__MODULE__{}}
 
   @doc """
   Instructs the message bus to acknowledge a message.
 
   """
-  @callback ack(state :: map, metadata :: map) :: :ok | {:error, term}
+  @callback ack(state :: %__MODULE__{}, metadata :: map) :: :ok | {:error, term}
 
   @doc """
   Instructs the message bus to reject a message.
 
   """
-  @callback reject(state :: map, metadata :: map) :: :ok | {:error, term}
+  @callback reject(state :: %__MODULE__{}, metadata :: map) :: :ok | {:error, term}
 
   @doc """
   Publish a message on the message bus.
 
   """
-  @callback publish(state :: map, message :: String.t()) :: :ok | {:error, term}
+  @callback publish(state :: %__MODULE__{}, message :: String.t()) :: :ok | {:error, term}
 
   @doc """
   Cleanup any infrastructure that the message bus has created (connections,
   channels, etc.).
 
   """
-  @callback cleanup(state :: map) :: {:ok, map}
+  @callback cleanup(state :: %__MODULE__{}) :: {:ok, %__MODULE__{}}
 
   @doc """
   Open a new message bus connection.
@@ -55,5 +55,5 @@ defmodule Lightrail.MessageBus do
   Close the message bus connection.
 
   """
-  @callback disconnect(connection :: map) :: :ok
+  @callback disconnect(connection :: term) :: :ok
 end
