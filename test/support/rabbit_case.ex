@@ -23,7 +23,8 @@ defmodule Test.Support.RabbitCase do
     Application.put_env(:lightrail, :message_bus, Lightrail.RabbitMQ.Adapter)
     :ok = Application.start(:lightrail)
 
-    {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
+    uri = Application.fetch_env!(:lightrail, :message_bus_uri)
+    {:ok, connection} = open_connection(uri)
 
     # Publishers don't know about queues, only exchanges. If we send a
     # message to an exchange that doesn't have a queue bound to it, the

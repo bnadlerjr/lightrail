@@ -13,4 +13,5 @@ config :lightrail, Test.Support.Repo,
 config :lightrail,
   ecto_repos: [Test.Support.Repo],
   message_bus: Test.Support.FakeRabbitMQ,
+  message_bus_uri: "amqp://guest:guest@localhost:5672",
   repo: Test.Support.Repo

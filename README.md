@@ -31,10 +31,13 @@ def application do
 end
 ```
 
-3. Lightrail does not ship with its own repo. Use your application's repo:
+3. Configure Lightrail. Lightrail does not ship with its own repo. Use your application's repo. You must also specify a message bus adapter and connection URI.
 
 ```
-config :lightrail, repo: MyApp.Repo
+config :lightrail,
+  message_bus: Lightrail.RabbitMQ.Adapter,
+  message_bus_uri: "amqp://guest:guest@localhost:5672",
+  repo: MyApp.Repo
 ```
 
 4. Create a migration for the message tables by running:
@@ -87,7 +90,7 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] RPC support
 - [ ] setup telemetry for publisher genserver
 - [ ] setup telemetry for consumer genserver
-- [ ] replace all hard-coded rabbitmq connection strings in tests
+- [x] replace all hard-coded rabbitmq connection strings in tests
 - [x] fix TODOs in Publisher
 - [x] how should protobuf encoding work?
 - [x] fix TODOs in Consumer

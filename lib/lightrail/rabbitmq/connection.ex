@@ -8,8 +8,8 @@ defmodule Lightrail.RabbitMQ.Connection do
 
   def start_link(options) do
     config = %Server{
-      uri: Application.get_env(:lightrail, :rabbit_uri, "amqp://guest:guest@localhost:5672"),
-      adapter: Application.get_env(:lightrail, :message_bus)
+      uri: Application.fetch_env!(:lightrail, :message_bus_uri),
+      adapter: Application.fetch_env!(:lightrail, :message_bus)
     }
 
     GenServer.start_link(Server, config, options)

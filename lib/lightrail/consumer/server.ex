@@ -19,7 +19,7 @@ defmodule Lightrail.Consumer.Server do
     config = apply(module, :init, [])
 
     new_state = %{
-      adapter: Application.get_env(:lightrail, :message_bus),
+      adapter: Application.fetch_env!(:lightrail, :message_bus),
       bus: %MessageBus{exchange: config[:exchange], queue: config[:queue]}
     }
 

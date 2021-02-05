@@ -18,8 +18,7 @@ defmodule Lightrail.ConsumerTest do
     def init() do
       [
         exchange: "lightrail:test",
-        queue: "lightrail:test:events",
-        connection: "amqp://guest:guest@localhost:5672"
+        queue: "lightrail:test:events"
       ]
     end
 

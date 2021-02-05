@@ -68,7 +68,9 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
 
   describe "cleanup" do
     test "closes channel" do
-      {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
+      {:ok, connection} =
+        open_connection(Application.fetch_env!(:lightrail, :message_bus_uri))
+
       {:ok, channel} = open_channel(connection)
 
       state = %{
@@ -86,7 +88,9 @@ defmodule Lightrail.MessageBus.RabbitmqTest do
     end
 
     test "doesn't try to close a channel that's already closed" do
-      {:ok, connection} = open_connection("amqp://guest:guest@localhost:5672")
+      {:ok, connection} =
+        open_connection(Application.fetch_env!(:lightrail, :message_bus_uri))
+
       {:ok, channel} = open_channel(connection)
 
       close_channel(channel)
