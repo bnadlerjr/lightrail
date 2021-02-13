@@ -6,6 +6,8 @@ defmodule Lightrail.MessagesTest do
   alias Lightrail.MessageFormat.BinaryProtobuf
   alias Lightrail.Messages
   alias Lightrail.Messages.ConsumedMessage
+  alias Lightrail.MessageStore.IncomingMessage
+  alias Lightrail.MessageStore.OutgoingMessage
   alias Test.Support.Message, as: Proto
 
   describe "#insert" do
@@ -13,7 +15,7 @@ defmodule Lightrail.MessagesTest do
       proto = Proto.new(uuid: UUID.uuid4())
       {:ok, encoded, type} = BinaryProtobuf.encode(proto)
 
-      args = %{
+      args = %OutgoingMessage{
         protobuf: proto,
         type: type,
         exchange: "lightrail:test",
@@ -50,7 +52,7 @@ defmodule Lightrail.MessagesTest do
       proto = Proto.new(uuid: UUID.uuid4())
       {:ok, encoded, type} = BinaryProtobuf.encode(proto)
 
-      args = %{
+      args = %IncomingMessage{
         protobuf: proto,
         type: type,
         exchange: "lightrail:test",
@@ -115,21 +117,32 @@ defmodule Lightrail.MessagesTest do
 
   describe "#transition_status" do
     setup do
-      msg = %ConsumedMessage{
-        encoded_message: "message",
-        message_type: "type",
+      proto = Proto.new(uuid: UUID.uuid4())
+      {:ok, encoded, type} = BinaryProtobuf.encode(proto)
+
+      msg = %IncomingMessage{
+        protobuf: proto,
+        type: type,
+        exchange: "lightrail:test",
         queue: "lightrail:test:event",
-        status: "processing",
-        uuid: UUID.uuid4()
+        encoded: encoded
       }
 
-      insert_consumed_message!(msg)
+      insert_consumed_message!(%ConsumedMessage{
+        encoded_message: encoded,
+        message_type: type,
+        exchange: "lightrail:test",
+        queue: "lightrail:test:event",
+        status: "processing",
+        uuid: proto.uuid
+      })
+
       %{message: msg}
     end
 
     test "successfully updates the status", %{message: msg} do
       {:ok, _} = Messages.transition_status(msg, "success")
-      persisted = get_consumed_message!(msg.uuid)
+      persisted = get_consumed_message!(msg.protobuf.uuid)
       assert "success" == persisted.status
     end
 

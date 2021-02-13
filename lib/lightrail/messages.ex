@@ -11,45 +11,41 @@ defmodule Lightrail.Messages do
   alias Lightrail.Messages.ConsumedMessage
   alias Lightrail.Messages.Errors
   alias Lightrail.Messages.PublishedMessage
+  alias Lightrail.MessageStore.IncomingMessage
+  alias Lightrail.MessageStore.OutgoingMessage
 
+  @behaviour Lightrail.MessageStore
   @repo Application.compile_env(:lightrail, :repo)
 
-  def insert(%{protobuf: protobuf, encoded: encoded, exchange: exchange, type: type}) do
-    params = %{
-      correlation_id: protobuf.correlation_id,
-      encoded_message: encoded,
-      exchange: exchange,
-      message_type: type,
-      status: "sent",
-      user_uuid: protobuf.user_uuid,
-      uuid: protobuf.uuid
-    }
+  def insert(%OutgoingMessage{} = msg) do
+    params = message_to_params(msg, "sent")
 
     with {:error, changeset} <- do_insert(params) do
       {:error, Errors.format(changeset)}
     end
   end
 
-  def upsert(%{protobuf: proto, encoded: encoded, exchange: exchange, type: type, queue: queue}) do
-    params = %{
-      correlation_id: proto.correlation_id,
-      encoded_message: encoded,
-      exchange: exchange,
-      message_type: type,
-      queue: queue,
-      status: "processing",
-      user_uuid: proto.user_uuid,
-      uuid: proto.uuid
-    }
+  def upsert(%IncomingMessage{} = msg) do
+    params = message_to_params(msg, "processing")
 
     with {:error, changeset} <- do_upsert(params) do
       {:error, Errors.format(changeset)}
     end
   end
 
-  def transition_status(message, status) do
-    with {:error, changeset} <- do_transition(message, status) do
-      {:error, Errors.format(changeset)}
+  def transition_status(%IncomingMessage{} = msg, status) do
+    %{protobuf: proto, exchange: exchange} = msg
+
+    case find_consumed_message(proto.uuid, exchange) do
+      nil ->
+        {:error,
+         "Unable to find consumed message " <>
+           "(#{inspect(proto.uuid)}, #{inspect(exchange)})"}
+
+      message ->
+        with {:error, changeset} <- do_transition(message, status) do
+          {:error, Errors.format(changeset)}
+        end
     end
   end
 
@@ -85,5 +81,24 @@ defmodule Lightrail.Messages do
   defp find_consumed_message(uuid, exchange) do
     from(m in ConsumedMessage, where: m.uuid == ^uuid, where: m.exchange == ^exchange)
     |> @repo.one
+  end
+
+  defp message_to_params(%{queue: queue} = msg, status) do
+    params = message_to_params(Map.drop(msg, [:queue]), status)
+    Map.merge(params, %{queue: queue})
+  end
+
+  defp message_to_params(msg, status) do
+    %{protobuf: protobuf, encoded: encoded, exchange: exchange, type: type} = msg
+
+    %{
+      correlation_id: protobuf.correlation_id,
+      encoded_message: encoded,
+      exchange: exchange,
+      message_type: type,
+      status: status,
+      user_uuid: protobuf.user_uuid,
+      uuid: protobuf.uuid
+    }
   end
 end

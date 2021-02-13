@@ -39,7 +39,7 @@ defmodule Lightrail.Publisher do
   require Logger
 
   alias Lightrail.Message
-  alias Lightrail.Messages
+  alias Lightrail.MessageStore.OutgoingMessage
 
   @doc """
   Used to provide publisher configuration.
@@ -137,7 +137,11 @@ defmodule Lightrail.Publisher do
   defp call_genserver({:error, error}), do: {:error, error}
 
   defp persist({:ok, %{protobuf: proto, message: msg, exchange: exch, type: type} = state}) do
-    case Messages.insert(%{protobuf: proto, encoded: msg, exchange: exch, type: type}) do
+    msg = %OutgoingMessage{protobuf: proto, encoded: msg, exchange: exch, type: type}
+
+    message_store = Application.fetch_env!(:lightrail, :message_store)
+
+    case message_store.insert(msg) do
       {:ok, _} -> {:ok, state}
       {:error, error} -> {:error, error}
     end

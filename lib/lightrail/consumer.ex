@@ -40,7 +40,7 @@ defmodule Lightrail.Consumer do
   require Logger
 
   alias Lightrail.Message
-  alias Lightrail.Messages
+  alias Lightrail.MessageStore.IncomingMessage
 
   @doc """
   Used to provide consumer configuration.
@@ -154,7 +154,7 @@ defmodule Lightrail.Consumer do
   end
 
   defp find_or_create_message(%{module: module} = info) do
-    params = %{
+    msg = %IncomingMessage{
       protobuf: info.proto,
       encoded: info.payload,
       exchange: info.exchange,
@@ -162,9 +162,11 @@ defmodule Lightrail.Consumer do
       queue: info.queue
     }
 
-    case Messages.upsert(params) do
+    message_store = Application.fetch_env!(:lightrail, :message_store)
+
+    case message_store.upsert(msg) do
       {:ok, persisted} ->
-        Map.merge(info, %{persisted: persisted})
+        Map.merge(info, %{persisted: persisted, incoming: msg})
 
       {:skip, _} ->
         {:skip, info}
@@ -181,14 +183,16 @@ defmodule Lightrail.Consumer do
 
   defp find_or_create_message(:error), do: :error
 
-  defp apply_handler(%{proto: proto, module: module, persisted: persisted}) do
+  defp apply_handler(%{proto: proto, module: module, incoming: msg}) do
+    message_store = Application.fetch_env!(:lightrail, :message_store)
+
     case apply(module, :handle_message, [proto]) do
       :ok ->
-        Messages.transition_status(persisted, "success")
+        message_store.transition_status(msg, "success")
         :ok
 
       :error ->
-        Messages.transition_status(persisted, "failed_to_process")
+        message_store.transition_status(msg, "failed_to_process")
         :error
     end
   end
