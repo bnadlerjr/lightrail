@@ -1,10 +1,10 @@
-defmodule Lightrail.RabbitMQ.Connection do
+defmodule Lightrail.MessageBus.RabbitMQ.Connection do
   @moduledoc """
   A RabbitMQ connection.
 
   """
 
-  alias Lightrail.RabbitMQ.Server
+  alias Lightrail.MessageBus.RabbitMQ.Server
 
   def start_link(options) do
     config = %Server{

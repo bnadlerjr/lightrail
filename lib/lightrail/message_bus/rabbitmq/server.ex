@@ -1,4 +1,4 @@
-defmodule Lightrail.RabbitMQ.Server do
+defmodule Lightrail.MessageBus.RabbitMQ.Server do
   @moduledoc """
   GenServer implementation for RabbitMQ connection.
 

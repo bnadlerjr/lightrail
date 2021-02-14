@@ -1,4 +1,4 @@
-defmodule Lightrail.RabbitMQ.Adapter do
+defmodule Lightrail.MessageBus.RabbitMQ.Adapter do
   @moduledoc """
   RabbitMQ implementation of the message bus.
 
@@ -12,7 +12,7 @@ defmodule Lightrail.RabbitMQ.Adapter do
   use AMQP
 
   alias Lightrail.MessageBus
-  alias Lightrail.RabbitMQ.Connection, as: BusConnection
+  alias Lightrail.MessageBus.RabbitMQ.Connection, as: BusConnection
 
   def setup_publisher(%MessageBus{exchange: exchange} = state) do
     {:ok, connection} = BusConnection.get(:publisher_connection)

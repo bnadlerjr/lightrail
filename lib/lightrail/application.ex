@@ -3,7 +3,7 @@ defmodule Lightrail.Application do
 
   use Application
 
-  alias Lightrail.RabbitMQ.Connection
+  alias Lightrail.MessageBus.RabbitMQ.Connection
 
   def start(_type, _args) do
     children = [
