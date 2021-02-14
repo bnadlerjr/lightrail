@@ -1,7 +1,7 @@
-defmodule Lightrail.Messages.PublishedMessageTest do
+defmodule Lightrail.MessageStore.DB.PublishedMessageTest do
   use ExUnit.Case, async: true
 
-  alias Lightrail.Messages.PublishedMessage
+  alias Lightrail.MessageStore.DB.PublishedMessage
 
   setup do
     uuid = "deadbeef-dead-dead-dead-deaddeafbeef"

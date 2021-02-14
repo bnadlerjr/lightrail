@@ -7,8 +7,8 @@ defmodule Test.Support.DataCase do
   use ExUnit.CaseTemplate
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias Lightrail.Messages.ConsumedMessage
-  alias Lightrail.Messages.PublishedMessage
+  alias Lightrail.MessageStore.DB.ConsumedMessage
+  alias Lightrail.MessageStore.DB.PublishedMessage
   alias Test.Support.Repo
 
   using do

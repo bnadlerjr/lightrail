@@ -1,11 +1,11 @@
-defmodule Lightrail.MessagesTest do
+defmodule Lightrail.MessageStore.DB.AdapterTest do
   use Test.Support.DataCase, async: true
 
   import Test.Support.Helpers
 
   alias Lightrail.MessageFormat.BinaryProtobuf
-  alias Lightrail.Messages
-  alias Lightrail.Messages.ConsumedMessage
+  alias Lightrail.MessageStore.DB.Adapter
+  alias Lightrail.MessageStore.DB.ConsumedMessage
   alias Lightrail.MessageStore.IncomingMessage
   alias Lightrail.MessageStore.OutgoingMessage
   alias Test.Support.Message, as: Proto
@@ -26,7 +26,7 @@ defmodule Lightrail.MessagesTest do
     end
 
     test "valid message is persisted", %{valid_args: args} do
-      {:ok, msg} = Messages.insert(args)
+      {:ok, msg} = Adapter.insert(args)
       persisted = get_published_message!(msg.uuid)
       assert args.encoded == persisted.encoded_message
       assert "lightrail:test" == persisted.exchange
@@ -36,13 +36,13 @@ defmodule Lightrail.MessagesTest do
 
     test "changeset errors are prettified", %{valid_args: args} do
       invalid_args = %{args | type: nil, encoded: nil}
-      {:error, msg} = Messages.insert(invalid_args)
+      {:error, msg} = Adapter.insert(invalid_args)
       assert "Encoded message can't be blank, Message type can't be blank" == msg
     end
 
     test "message UUID must be unique", %{valid_args: args} do
-      {:ok, _msg} = Messages.insert(args)
-      {:error, msg} = Messages.insert(args)
+      {:ok, _msg} = Adapter.insert(args)
+      {:error, msg} = Adapter.insert(args)
       assert "Uuid has already been taken" == msg
     end
   end
@@ -64,7 +64,7 @@ defmodule Lightrail.MessagesTest do
     end
 
     test "valid message is persisted", %{valid_args: args} do
-      {:ok, msg} = Messages.upsert(args)
+      {:ok, msg} = Adapter.upsert(args)
       persisted = get_consumed_message!(msg.uuid)
       assert args.encoded == persisted.encoded_message
       assert "lightrail:test" == persisted.exchange
@@ -75,7 +75,7 @@ defmodule Lightrail.MessagesTest do
 
     test "changeset errors are prettified", %{valid_args: args} do
       invalid_args = %{args | type: nil, encoded: nil}
-      {:error, msg} = Messages.upsert(invalid_args)
+      {:error, msg} = Adapter.upsert(invalid_args)
       assert "Encoded message can't be blank, Message type can't be blank" == msg
     end
 
@@ -91,7 +91,7 @@ defmodule Lightrail.MessagesTest do
         )
 
       assert_difference row_count("lightrail_consumed_messages"), count: 0 do
-        {:ok, msg_two} = Messages.upsert(args)
+        {:ok, msg_two} = Adapter.upsert(args)
       end
 
       assert msg_one.uuid == msg_two.uuid
@@ -110,7 +110,7 @@ defmodule Lightrail.MessagesTest do
         )
 
       assert_difference row_count("lightrail_consumed_messages"), count: 0 do
-        assert {:skip, msg_one} == Messages.upsert(args)
+        assert {:skip, msg_one} == Adapter.upsert(args)
       end
     end
   end
@@ -141,13 +141,13 @@ defmodule Lightrail.MessagesTest do
     end
 
     test "successfully updates the status", %{message: msg} do
-      {:ok, _} = Messages.transition_status(msg, "success")
+      {:ok, _} = Adapter.transition_status(msg, "success")
       persisted = get_consumed_message!(msg.protobuf.uuid)
       assert "success" == persisted.status
     end
 
     test "errors are prettified", %{message: msg} do
-      {:error, result} = Messages.transition_status(msg, "invalid")
+      {:error, result} = Adapter.transition_status(msg, "invalid")
 
       assert "Status transition_changeset failed: invalid transition from " <>
                "processing to invalid" == result

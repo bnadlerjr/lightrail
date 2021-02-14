@@ -1,4 +1,4 @@
-defmodule Lightrail.Messages.Errors do
+defmodule Lightrail.MessageStore.DB.Errors do
   @moduledoc """
   Helpers for formatting Ecto changeset errors. This code was (mostly)
   lifted from a blog post named [Prettify Ecto Error][1].

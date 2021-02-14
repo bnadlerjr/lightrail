@@ -1,4 +1,4 @@
-defmodule Lightrail.Messages do
+defmodule Lightrail.MessageStore.DB.Adapter do
   @moduledoc """
   Deals with peristing messages to the database.
 
@@ -8,9 +8,9 @@ defmodule Lightrail.Messages do
 
   import Ecto.Query
 
-  alias Lightrail.Messages.ConsumedMessage
-  alias Lightrail.Messages.Errors
-  alias Lightrail.Messages.PublishedMessage
+  alias Lightrail.MessageStore.DB.ConsumedMessage
+  alias Lightrail.MessageStore.DB.Errors
+  alias Lightrail.MessageStore.DB.PublishedMessage
   alias Lightrail.MessageStore.IncomingMessage
   alias Lightrail.MessageStore.OutgoingMessage
 

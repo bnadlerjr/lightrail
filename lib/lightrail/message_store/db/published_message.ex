@@ -1,4 +1,4 @@
-defmodule Lightrail.Messages.PublishedMessage do
+defmodule Lightrail.MessageStore.DB.PublishedMessage do
   @moduledoc """
   Schema and helpers for a published message.
 

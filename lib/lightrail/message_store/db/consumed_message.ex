@@ -1,4 +1,4 @@
-defmodule Lightrail.Messages.ConsumedMessage do
+defmodule Lightrail.MessageStore.DB.ConsumedMessage do
   @moduledoc """
   Schema and helpers for a consumed message.
 

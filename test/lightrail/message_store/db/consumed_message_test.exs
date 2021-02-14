@@ -1,7 +1,7 @@
-defmodule Lightrail.MessagesConsumedMessageTest do
+defmodule Lightrail.MessageStore.DB.ConsumedMessageTest do
   use ExUnit.Case, async: true
 
-  alias Lightrail.Messages.ConsumedMessage
+  alias Lightrail.MessageStore.DB.ConsumedMessage
 
   setup do
     uuid = "deadbeef-dead-dead-dead-deaddeafbeef"
