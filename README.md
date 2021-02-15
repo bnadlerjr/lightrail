@@ -85,11 +85,9 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] row locking for consumed messages to prevent concurrent processing
 - [ ] remove specs from non-public API modules
 - [ ] mix task for generating migrations
-- [ ] setup telemetry for MessageBus.RabbitMQ
-- [ ] command messages (both publishing & consuming); how should they work? when should they be used?
-- [ ] RPC support
 - [ ] setup telemetry for publisher genserver
 - [ ] setup telemetry for consumer genserver
+- [x] setup telemetry for MessageBus.RabbitMQ
 - [x] replace all hard-coded rabbitmq connection strings in tests
 - [x] fix TODOs in Publisher
 - [x] how should protobuf encoding work?
@@ -108,3 +106,5 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [x] figure out how auto-generated docs work (also saw references in some places about executable docs)
 - [x] look into using `ex_rabbit_pool` for connections
 - [x] how should supervisors work? develop consumer strategy
+- [~] command messages (both publishing & consuming); how should they work? when should they be used?
+- [~] RPC support

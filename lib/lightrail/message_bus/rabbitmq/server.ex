@@ -5,7 +5,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Server do
   """
 
   use GenServer
-  require Logger
+
+  alias Lightrail.MessageBus.RabbitMQ.Telemetry
 
   defstruct [:uri, :adapter, :connection]
 
@@ -29,7 +30,7 @@ defmodule Lightrail.MessageBus.RabbitMQ.Server do
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
     %__MODULE__{uri: uri, adapter: adapter} = state
-    Logger.info("RabbitMQ connection is down! Reason: #{inspect(reason)}")
+    Telemetry.emit_connection_down(__MODULE__, reason)
     new_state = Map.put(state, :connection, adapter.connect(uri))
     {:noreply, new_state}
   end
@@ -44,7 +45,7 @@ defmodule Lightrail.MessageBus.RabbitMQ.Server do
   @doc false
   @impl GenServer
   def terminate(reason, %__MODULE__{adapter: adapter, connection: connection}) do
-    Logger.info("Terminating RabbitMQ connection, reason: #{inspect(reason)}")
+    Telemetry.emit_connection_down(__MODULE__, reason)
     if connection && Process.alive?(connection.pid), do: adapter.disconnect(connection)
     :normal
   end

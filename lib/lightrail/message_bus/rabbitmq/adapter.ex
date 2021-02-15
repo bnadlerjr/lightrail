@@ -8,11 +8,11 @@ defmodule Lightrail.MessageBus.RabbitMQ.Adapter do
 
   @behaviour Lightrail.MessageBus
 
-  require Logger
   use AMQP
 
   alias Lightrail.MessageBus
   alias Lightrail.MessageBus.RabbitMQ.Connection, as: BusConnection
+  alias Lightrail.MessageBus.RabbitMQ.Telemetry
 
   def setup_publisher(%MessageBus{exchange: exchange} = state) do
     {:ok, connection} = BusConnection.get(:publisher_connection)
@@ -36,11 +36,11 @@ defmodule Lightrail.MessageBus.RabbitMQ.Adapter do
   def connect(uri) do
     case Connection.open(uri) do
       {:ok, connection} ->
-        Logger.info("Connected to RabbitMQ")
+        Telemetry.emit_connection_open(__MODULE__)
         {:ok, connection}
 
-      {:error, e} ->
-        Logger.error("Failed to connect to RabbitMQ (#{inspect(e)})")
+      {:error, {kind, reason}} ->
+        Telemetry.emit_connection_fail(__MODULE__, kind, reason)
         :timer.sleep(5000)
         connect(uri)
     end
@@ -61,9 +61,23 @@ defmodule Lightrail.MessageBus.RabbitMQ.Adapter do
   end
 
   def publish(%{channel: channel, exchange: exchange}, message) do
-    Logger.info("Publishing message to #{exchange}")
+    start_time = Telemetry.emit_publish_start(__MODULE__, exchange, message)
     routing_key = ""
-    Basic.publish(channel, exchange, routing_key, message, persistent: true)
+
+    case Basic.publish(channel, exchange, routing_key, message, persistent: true) do
+      :ok ->
+        Telemetry.emit_publish_stop(__MODULE__, start_time, exchange, message)
+
+      {kind, reason} ->
+        Telemetry.emit_publish_error(
+          __MODULE__,
+          start_time,
+          exchange,
+          message,
+          kind,
+          reason
+        )
+    end
   end
 
   def cleanup(%{channel: channel} = state) when not is_nil(channel) do
