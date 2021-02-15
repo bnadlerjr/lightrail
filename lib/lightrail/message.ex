@@ -5,8 +5,6 @@ defmodule Lightrail.Message do
 
   """
 
-  require Logger
-
   alias Lightrail.MessageFormat.BinaryProtobuf
 
   @doc """

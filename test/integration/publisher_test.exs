@@ -47,11 +47,7 @@ defmodule Lightrail.Integration.PublisherTest do
       end)
 
       # Try to publish a bad message
-      expected = {
-        :error,
-        "Failed to publish message. \"Argument Error: Valid Protobuf required\""
-      }
-
+      expected = {:error, "Argument Error: Valid Protobuf required"}
       assert expected == Publisher.publish_message("not a protobuf")
 
       # Make sure the queue is empty

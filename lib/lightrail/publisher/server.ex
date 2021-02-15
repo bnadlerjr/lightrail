@@ -4,10 +4,10 @@ defmodule Lightrail.Publisher.Server do
 
   """
 
-  require Logger
   use GenServer
 
   alias Lightrail.MessageBus
+  alias Lightrail.Publisher.Telemetry
 
   @doc false
   @impl GenServer
@@ -47,7 +47,7 @@ defmodule Lightrail.Publisher.Server do
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
     %{module: module, adapter: adapter, bus: bus} = state
-    Logger.info("[#{module}]: Publisher is down! Reason: #{inspect(reason)}")
+    Telemetry.emit_publisher_down(module, reason)
     {:ok, bus_state} = adapter.setup_publisher(bus)
     {:noreply, Map.put(state, :bus, bus_state)}
   end
@@ -55,7 +55,7 @@ defmodule Lightrail.Publisher.Server do
   @doc false
   @impl GenServer
   def terminate(reason, %{module: module, adapter: adapter, bus: bus}) do
-    Logger.info("[#{module}]: Terminating publisher, reason: #{inspect(reason)}")
+    Telemetry.emit_publisher_down(module, reason)
     adapter.cleanup(bus)
     :normal
   end

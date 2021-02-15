@@ -36,10 +36,9 @@ defmodule Lightrail.Publisher do
 
   """
 
-  require Logger
-
   alias Lightrail.Message
   alias Lightrail.MessageStore.OutgoingMessage
+  alias Lightrail.Publisher.Telemetry
 
   @doc """
   Used to provide publisher configuration.
@@ -111,7 +110,7 @@ defmodule Lightrail.Publisher do
     |> prepare_msg()
     |> call_genserver()
     |> persist()
-    |> log_details()
+    |> emit_telemetry()
   end
 
   defp prepare_msg(%{protobuf: protobuf} = state) do
@@ -149,14 +148,13 @@ defmodule Lightrail.Publisher do
 
   defp persist({:error, error}), do: {:error, error}
 
-  defp log_details({:ok, %{type: type, exchange: exchange}}) do
-    Logger.info("[#{__MODULE__}]: Published a #{inspect(type)} message to #{inspect(exchange)}")
+  defp emit_telemetry({:ok, %{type: type, exchange: exchange}}) do
+    Telemetry.emit_publish_success(__MODULE__, exchange, type)
     :ok
   end
 
-  defp log_details({:error, error}) do
-    msg = "Failed to publish message. #{inspect(error)}"
-    Logger.error("[#{__MODULE__}]: #{msg}")
-    {:error, msg}
+  defp emit_telemetry({:error, error}) do
+    Telemetry.emit_publish_failure(__MODULE__, error)
+    {:error, error}
   end
 end
