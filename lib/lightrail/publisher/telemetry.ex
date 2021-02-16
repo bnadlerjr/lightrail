@@ -5,6 +5,8 @@ defmodule Lightrail.Publisher.Telemetry do
   [1]: https://github.com/beam-telemetry/telemetry
   """
 
+  alias Lightrail.Telemetry
+
   @doc """
   Dispatched by `Lightrail.Publisher` when a message is successfully published.
 
@@ -14,9 +16,8 @@ defmodule Lightrail.Publisher.Telemetry do
   """
   def emit_publish_success(module, exchange, type) do
     event = [:lightrail, :publisher, :publish, :success]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, exchange: exchange, type: type}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 
   @doc """
@@ -28,9 +29,8 @@ defmodule Lightrail.Publisher.Telemetry do
   """
   def emit_publish_failure(module, reason) do
     event = [:lightrail, :publisher, :publish, :failure]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, reason: reason}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 
   @doc """
@@ -42,8 +42,7 @@ defmodule Lightrail.Publisher.Telemetry do
   """
   def emit_publisher_down(module, reason) do
     event = [:lightrail, :publisher, :down]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, reason: reason}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 end

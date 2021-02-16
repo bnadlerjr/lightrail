@@ -85,8 +85,8 @@ This is a non-exhaustive list of things in no particular order that I'd like to 
 - [ ] row locking for consumed messages to prevent concurrent processing
 - [ ] remove specs from non-public API modules
 - [ ] mix task for generating migrations
-- [ ] setup telemetry for publisher genserver
-- [ ] setup telemetry for consumer genserver
+- [x] setup telemetry for publisher genserver
+- [x] setup telemetry for consumer genserver
 - [x] setup telemetry for MessageBus.RabbitMQ
 - [x] replace all hard-coded rabbitmq connection strings in tests
 - [x] fix TODOs in Publisher

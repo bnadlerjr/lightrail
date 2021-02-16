@@ -5,6 +5,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   [1]: https://github.com/beam-telemetry/telemetry
   """
 
+  alias Lightrail.Telemetry
+
   @doc """
   Dispatched by `Lightrail.MessageBus.RabbitMQ.Adapter` when RabbitMQ
   connection is opened.
@@ -15,9 +17,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   """
   def emit_connection_open(module) do
     event = [:lightrail, :rabbitmq, :connection, :open]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 
   @doc """
@@ -30,9 +31,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   """
   def emit_connection_fail(module, kind, reason) do
     event = [:lightrail, :rabbitmq, :connection, :fail_to_open]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, kind: kind, reason: reason}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 
   @doc """
@@ -45,9 +45,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   """
   def emit_connection_down(module, reason) do
     event = [:lightrail, :rabbitmq, :connection, :down]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, reason: reason}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
   end
 
   @doc """
@@ -60,9 +59,8 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   """
   def emit_publish_start(module, exchange, message) do
     event = [:lightrail, :rabbitmq, :publish, :start]
-    measurements = %{system_time: System.system_time()}
     metadata = %{module: module, exchange: exchange, message: message}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, metadata)
     System.monotonic_time()
   end
 
@@ -70,7 +68,7 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
   Dispatched by `Lightrail.MessageBus.RabbitMQ.Adapter` when a message has
   been successfully published. The duration is in milliseconds.
 
-  - Measurement: `%{duration: integer}`
+  - Measurement: `%{system_time: integer, duration: integer}`
   - Metadata: `%{module: term, exchange: term, message: String.t()}`
 
   """
@@ -78,14 +76,14 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
     event = [:lightrail, :rabbitmq, :publish, :stop]
     measurements = %{duration: calculate_duration_ms(start_time)}
     metadata = %{module: module, exchange: exchange, message: message}
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, measurements, metadata)
   end
 
   @doc """
   Dispatched by `Lightrail.MessageBus.RabbitMQ.Adapter` when an error occurs
   while attempting to publish a message. The duration is in milliseconds.
 
-  - Measurement: `%{duration: integer}`
+  - Measurement: `%{system_time: integer, duration: integer}`
   - Metadata: `%{module: term, exchange: term, message: String.t(), kind: atom, reason: term}`
 
   """
@@ -101,7 +99,7 @@ defmodule Lightrail.MessageBus.RabbitMQ.Telemetry do
       reason: reason
     }
 
-    :telemetry.execute(event, measurements, metadata)
+    Telemetry.emit(event, measurements, metadata)
   end
 
   defp calculate_duration_ms(start_time) do
