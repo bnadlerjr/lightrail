@@ -4,9 +4,9 @@ defmodule Lightrail.Consumer.Server do
 
   """
 
-  require Logger
   use GenServer
 
+  alias Lightrail.Consumer.Telemetry
   alias Lightrail.MessageBus
 
   @doc false
@@ -36,15 +36,16 @@ defmodule Lightrail.Consumer.Server do
 
   @doc false
   @impl GenServer
-  def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, %{module: module} = state) do
-    Logger.info("[#{module}]: Broker confirmed consumer with tag #{consumer_tag}")
+  def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, state) do
+    %{module: module, bus: %{exchange: exchange}} = state
+    Telemetry.emit_consumer_confirmed(module, consumer_tag, exchange)
     {:noreply, state}
   end
 
   @doc false
   @impl GenServer
   def handle_info({:basic_cancel, %{consumer_tag: consumer_tag}}, %{module: module} = state) do
-    Logger.warn("[#{module}]: The consumer was unexpectedly cancelled, tag: #{consumer_tag}")
+    Telemetry.emit_consumer_cancelled(module, consumer_tag)
     {:stop, :cancelled, state}
   end
 
@@ -55,9 +56,9 @@ defmodule Lightrail.Consumer.Server do
     info = %{module: module, exchange: bus.exchange, queue: bus.queue}
 
     case Lightrail.Consumer.process(payload, attributes, info) do
-      :error ->
+      {:error, error} ->
         adapter.reject(bus, attributes)
-        {:noreply, :error}
+        {:noreply, :error, error}
 
       _ ->
         adapter.ack(bus, attributes)
@@ -68,7 +69,7 @@ defmodule Lightrail.Consumer.Server do
   @doc false
   @impl GenServer
   def terminate(reason, %{adapter: adapter, bus: bus} = state) do
-    Logger.info("[#{state.module}]: Terminating consumer, reason: #{inspect(reason)}")
+    Telemetry.emit_consumer_down(state.module, reason)
     adapter.cleanup(bus)
     :normal
   end

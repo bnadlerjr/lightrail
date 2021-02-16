@@ -32,13 +32,15 @@ defmodule Lightrail.Consumer do
     def handle_message(_message) do
       # do something with the message
       :ok
+
+      # if handling the message causes an error return either a bare `:error`
+      # or a tuple `{:error, "reason why there was an error"}`
     end
   end
   ```
   """
 
-  require Logger
-
+  alias Lightrail.Consumer.Telemetry
   alias Lightrail.Message
   alias Lightrail.MessageStore.IncomingMessage
 
@@ -126,34 +128,24 @@ defmodule Lightrail.Consumer do
     |> decode_payload()
     |> find_or_create_message()
     |> apply_handler()
+    |> emit_telemetry()
   rescue
     reason ->
-      full_error = {reason, __STACKTRACE__}
-
-      Logger.error(
-        "[#{module}]: Unhandled exception while " <>
-          "consuming message. #{inspect(full_error)}"
-      )
-
-      :error
+      Telemetry.emit_consumer_exception(module, reason, __STACKTRACE__)
+      reraise reason, __STACKTRACE__
   end
 
-  defp decode_payload(%{payload: payload, module: module} = info) do
+  defp decode_payload(%{payload: payload} = info) do
     case Message.decode(payload) do
       {:ok, proto, type} ->
-        Map.merge(info, %{proto: proto, type: type})
+        {:ok, Map.merge(info, %{proto: proto, type: type})}
 
       {:error, error} ->
-        Logger.error(
-          "[#{module}]: An error occurred while " <>
-            "decoding a message. #{error}"
-        )
-
-        :error
+        {:error, error, info}
     end
   end
 
-  defp find_or_create_message(%{module: module} = info) do
+  defp find_or_create_message({:ok, info}) do
     msg = %IncomingMessage{
       protobuf: info.proto,
       encoded: info.payload,
@@ -166,41 +158,52 @@ defmodule Lightrail.Consumer do
 
     case message_store.upsert(msg) do
       {:ok, persisted} ->
-        Map.merge(info, %{persisted: persisted, incoming: msg})
+        {:ok, Map.merge(info, %{persisted: persisted, incoming: msg})}
 
       {:skip, _} ->
         {:skip, info}
 
       {:error, error} ->
-        Logger.error(
-          "[#{module}]: An error occurred while " <>
-            "persisting a message. #{error}"
-        )
-
-        :error
+        {:error, error, info}
     end
   end
 
-  defp find_or_create_message(:error), do: :error
+  defp find_or_create_message({:error, error, info}), do: {:error, error, info}
 
-  defp apply_handler(%{proto: proto, module: module, incoming: msg}) do
+  defp apply_handler({:ok, %{proto: proto, module: module, incoming: msg} = info}) do
     message_store = Application.fetch_env!(:lightrail, :message_store)
 
     case apply(module, :handle_message, [proto]) do
       :ok ->
         message_store.transition_status(msg, "success")
-        :ok
+        {:ok, info}
+
+      {:error, error} ->
+        message_store.transition_status(msg, "failed_to_process")
+        {:error, error, info}
 
       :error ->
         message_store.transition_status(msg, "failed_to_process")
-        :error
+        {:error, "Handler did not provide error message", info}
     end
   end
 
-  defp apply_handler({:skip, %{module: module}}) do
-    Logger.info("[#{module}]: Message is already being processed, skipping")
+  defp apply_handler({:skip, info}) do
+    %{module: module, type: type, proto: proto, exchange: exchange} = info
+    Telemetry.emit_consumer_skip(module, type, proto.uuid, exchange)
+    {:ok, info}
+  end
+
+  defp apply_handler({:error, error, info}), do: {:error, error, info}
+
+  defp emit_telemetry({:ok, info}) do
+    %{module: module, proto: proto, type: type, exchange: exchange} = info
+    Telemetry.emit_consumer_success(module, type, proto.uuid, exchange)
     :ok
   end
 
-  defp apply_handler(:error), do: :error
+  defp emit_telemetry({:error, error, %{module: module, payload: payload}}) do
+    Telemetry.emit_consumer_failure(module, error, payload)
+    {:error, error}
+  end
 end

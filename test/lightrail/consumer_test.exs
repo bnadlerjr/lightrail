@@ -93,7 +93,7 @@ defmodule Lightrail.ConsumerTest do
 
     test "message could not be decoded", context do
       assert_difference row_count("lightrail_consumed_messages"), count: 0 do
-        :error = Consumer.process("invalid", %{}, context)
+        {:error, _error} = Consumer.process("invalid", %{}, context)
       end
     end
 
@@ -103,7 +103,7 @@ defmodule Lightrail.ConsumerTest do
       invalid_info = %{context | queue: nil}
 
       assert_difference row_count("lightrail_consumed_messages"), count: 0 do
-        :error = Consumer.process(encoded, %{}, invalid_info)
+        {:error, "Queue can't be blank"} = Consumer.process(encoded, %{}, invalid_info)
       end
     end
 
@@ -112,7 +112,8 @@ defmodule Lightrail.ConsumerTest do
       {:ok, encoded, _type} = Message.prepare_for_publishing(proto)
 
       assert_difference row_count("lightrail_consumed_messages"), count: 1 do
-        :error = Consumer.process(encoded, %{}, context)
+        {:error, "Handler did not provide error message"} =
+          Consumer.process(encoded, %{}, context)
       end
 
       persisted = get_consumed_message!(proto.uuid)
